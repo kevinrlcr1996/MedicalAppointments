@@ -1,0 +1,61 @@
+services:
+  sql-server:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: medical-sql-server
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: ${SA_PASSWORD:?Set SA_PASSWORD in .env}
+    ports:
+      - "1433:1433"
+    volumes:
+      - sql-data:/var/opt/mssql
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: medical-mailpit
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+
+  api:
+    build:
+      context: .
+      dockerfile: docker/api/Dockerfile
+    container_name: medical-api
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
+      ASPNETCORE_URLS: http://+:5001
+      ConnectionStrings__DefaultConnection: Server=sql-server,1433;Database=MedicalAppointments;User Id=sa;Password=${SA_PASSWORD:?Set SA_PASSWORD in .env};TrustServerCertificate=True
+      Jwt__Key: ${JWT_KEY:?Set JWT_KEY in .env}
+      Jwt__Issuer: MedicalAppointments
+      Jwt__Audience: MedicalAppointments
+      Cors__AllowedOrigins__0: http://localhost:5173
+      Notifications__Email__Provider: Smtp
+      Smtp__Host: mailpit
+      Smtp__Port: 1025
+      Smtp__From: no-reply@medicalappointments.local
+      Smtp__UseSsl: false
+    ports:
+      - "5001:5001"
+    depends_on:
+      - sql-server
+      - mailpit
+
+  frontend:
+    image: node:24-alpine
+    container_name: medical-frontend
+    working_dir: /app
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0 --port 5173"
+    environment:
+      VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:5001}
+    volumes:
+      - ./frontend:/app
+      - frontend-node-modules:/app/node_modules
+    ports:
+      - "5173:5173"
+    depends_on:
+      - api
+
+volumes:
+  sql-data:
+  frontend-node-modules:

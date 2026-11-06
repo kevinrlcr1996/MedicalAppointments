@@ -1,0 +1,14 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<ItemGroup>
+		<ProjectReference Include="..\MedicalAppointments.Domain\MedicalAppointments.Domain.csproj" />
+	</ItemGroup>
+
+	<PropertyGroup>
+		<RootNamespace>MedicalAppointments.Contracts</RootNamespace>
+		<TargetFramework>net10.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+	</PropertyGroup>
+
+</Project>

@@ -1,0 +1,26 @@
+﻿namespace MedicalAppointments.Application.Appointments.Auth;
+
+public sealed record AppointmentAccessSubject(
+    Guid? UserId,
+    Guid? PatientId,
+    Guid? DoctorId,
+    bool CanReadAll,
+    bool CanReadAssigned,
+    bool CanReadOwn,
+    bool CanCreateAll,
+    bool CanCreateAssigned,
+    bool CanCreateOwn,
+    bool CanUpdateAll,
+    bool CanUpdateAssigned,
+    bool CanCancelAll,
+    bool CanCancelAssigned,
+    bool CanCancelOwn,
+    bool CanRescheduleAll,
+    bool CanRescheduleAssigned,
+    bool CanRescheduleOwn,
+    bool CanCheckIn,
+    bool CanComplete,
+    bool CanMarkNoShow,
+    bool CanManageAll,
+    bool CanManageAssigned,
+    bool CanOverridePolicy);

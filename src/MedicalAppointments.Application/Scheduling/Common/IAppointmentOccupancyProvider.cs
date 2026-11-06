@@ -1,0 +1,11 @@
+﻿namespace MedicalAppointments.Application.Scheduling.Common;
+
+public interface IAppointmentOccupancyProvider
+{
+    Task<IReadOnlyList<TimeRange>> GetOccupiedRangesAsync(
+        Guid doctorId,
+        Guid clinicId,
+        DateTimeOffset fromUtc,
+        DateTimeOffset toUtc,
+        CancellationToken cancellationToken = default);
+}

@@ -1,0 +1,188 @@
+﻿using MedicalAppointments.Application.Auth;
+using MedicalAppointments.Domain.Identity;
+using MedicalAppointments.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
+
+namespace MedicalAppointments.Infrastructure.Identity.Persistence;
+
+public sealed class EfUserStore : IUserStore
+{
+    private readonly AppDbContext _dbContext;
+
+    public EfUserStore(AppDbContext dbContext)
+    {
+        _dbContext = dbContext;
+    }
+
+    public Task<bool> EmailExistsAsync(string normalizedEmail, CancellationToken cancellationToken = default)
+    {
+        return _dbContext.Users.AnyAsync(x => x.NormalizedEmail == normalizedEmail, cancellationToken);
+    }
+
+    public Task<bool> ExistsAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        return _dbContext.Users.AnyAsync(x => x.Id == userId, cancellationToken);
+    }
+
+    public async Task AddAsync(User user, CancellationToken cancellationToken = default)
+    {
+        await _dbContext.Users.AddAsync(user, cancellationToken);
+    }
+
+    public async Task AssignRoleByNameAsync(
+        User user,
+        string roleName,
+        DateTimeOffset now,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(user);
+        ArgumentException.ThrowIfNullOrWhiteSpace(roleName);
+
+        var normalizedRoleName = roleName.Trim().ToUpperInvariant();
+
+        var role = await _dbContext.Roles
+            .FirstOrDefaultAsync(x => x.NormalizedName == normalizedRoleName, cancellationToken);
+
+        if (role is not null)
+        {
+            user.AssignRole(role.Id, now);
+        }
+    }
+
+    public Task<User?> FindTrackedByIdAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        return _dbContext.Users.FirstOrDefaultAsync(x => x.Id == userId, cancellationToken);
+    }
+
+    public Task<User?> FindTrackedByEmailAsync(string normalizedEmail, CancellationToken cancellationToken = default)
+    {
+        return _dbContext.Users.FirstOrDefaultAsync(x => x.NormalizedEmail == normalizedEmail, cancellationToken);
+    }
+
+    public Task<User?> FindTrackedByEmailConfirmationTokenHashAsync(
+        string tokenHash,
+        CancellationToken cancellationToken = default)
+    {
+        return _dbContext.Users
+            .FirstOrDefaultAsync(x => x.EmailConfirmationTokenHash == tokenHash, cancellationToken);
+    }
+
+    public Task<User?> FindTrackedByPasswordResetTokenHashAsync(
+        string tokenHash,
+        CancellationToken cancellationToken = default)
+    {
+        return _dbContext.Users
+            .FirstOrDefaultAsync(x => x.PasswordResetTokenHash == tokenHash, cancellationToken);
+    }
+
+    public async Task<UserLoginCandidate?> FindLoginCandidateByEmailAsync(
+        string normalizedEmail,
+        CancellationToken cancellationToken = default)
+    {
+        var user = await _dbContext.Users
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.NormalizedEmail == normalizedEmail, cancellationToken);
+
+        if (user is null)
+        {
+            return null;
+        }
+
+        var (roles, permissions) = await LoadAuthDataAsync(user.Id, cancellationToken);
+
+        return new UserLoginCandidate(
+            user.Id,
+            user.Email,
+            user.PasswordHash,
+            user.IsEmailConfirmed,
+            user.FailedLoginCount,
+            user.LockoutEnd,
+            user.SecurityStamp,
+            roles,
+            permissions);
+    }
+
+    public async Task<UserAuthenticationData> GetAuthenticationDataAsync(
+        Guid userId,
+        CancellationToken cancellationToken = default)
+    {
+        var (roles, permissions) = await LoadAuthDataAsync(userId, cancellationToken);
+
+        return new UserAuthenticationData(roles, permissions);
+    }
+
+    public async Task<UserProfile?> GetProfileAsync(
+        Guid userId,
+        CancellationToken cancellationToken = default)
+    {
+        var user = await _dbContext.Users
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id == userId, cancellationToken);
+
+        if (user is null)
+        {
+            return null;
+        }
+
+        var (roles, permissions) = await LoadAuthDataAsync(userId, cancellationToken);
+
+        return new UserProfile(
+            user.Id,
+            user.Email,
+            user.FirstName,
+            user.LastName,
+            user.IsEmailConfirmed,
+            roles,
+            permissions);
+    }
+
+    // CLAVE DEL FIX: los permisos del usuario = heredados del rol + directos, deduplicados.
+    // Se devuelve Permission.Name (lowercase) para que coincida con las constantes del
+    // backend (Permissions.*) y del frontend (lib/permissions.ts). Usar NormalizedName
+    // (uppercase) rompería tanto hasPermission() en React como principal.HasPermission()
+    // en el handler de autorización.
+    private async Task<(List<string> Roles, List<string> Permissions)> LoadAuthDataAsync(
+        Guid userId,
+        CancellationToken cancellationToken)
+    {
+        var roles = await _dbContext.UserRoles
+            .Where(ur => ur.UserId == userId)
+            .Join(
+                _dbContext.Roles,
+                ur => ur.RoleId,
+                r => r.Id,
+                (ur, r) => r.Name)
+            .Distinct()
+            .ToListAsync(cancellationToken);
+
+        var rolePermissionNames = await _dbContext.UserRoles
+            .Where(ur => ur.UserId == userId)
+            .Join(
+                _dbContext.RolePermissions,
+                ur => ur.RoleId,
+                rp => rp.RoleId,
+                (ur, rp) => rp.PermissionId)
+            .Join(
+                _dbContext.Permissions,
+                permissionId => permissionId,
+                p => p.Id,
+                (permissionId, p) => p.Name)
+            .ToListAsync(cancellationToken);
+
+        var directPermissionNames = await _dbContext.UserPermissions
+            .Where(up => up.UserId == userId)
+            .Join(
+                _dbContext.Permissions,
+                up => up.PermissionId,
+                p => p.Id,
+                (up, p) => p.Name)
+            .ToListAsync(cancellationToken);
+
+        var permissions = rolePermissionNames
+            .Concat(directPermissionNames)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        return (roles, permissions);
+    }
+}

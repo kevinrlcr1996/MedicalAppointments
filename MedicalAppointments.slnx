@@ -1,0 +1,14 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/MedicalAppointments.Api/MedicalAppointments.Api.csproj" />
+    <Project Path="src/MedicalAppointments.Application/MedicalAppointments.Application.csproj" />
+    <Project Path="src/MedicalAppointments.Contracts/MedicalAppointments.Contracts.csproj" />
+    <Project Path="src/MedicalAppointments.Domain/MedicalAppointments.Domain.csproj" />
+    <Project Path="src/MedicalAppointments.Infrastructure/MedicalAppointments.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/MedicalAppointments.ArchitectureTests/MedicalAppointments.ArchitectureTests.csproj" />
+    <Project Path="tests/MedicalAppointments.IntegrationTests/MedicalAppointments.IntegrationTests.csproj" />
+    <Project Path="tests/MedicalAppointments.UnitTests/MedicalAppointments.UnitTests.csproj" />
+  </Folder>
+</Solution>
