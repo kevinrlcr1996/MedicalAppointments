@@ -21,13 +21,18 @@ using MedicalAppointments.Application.Scheduling.Holidays;
 using MedicalAppointments.Application.Scheduling.Outbox;
 using MedicalAppointments.Application.Scheduling.ScheduleExceptions;
 using MedicalAppointments.Application.Users;
+using MedicalAppointments.Application.WaitingList;
+using MedicalAppointments.Application.WaitingList.Common;
+using MedicalAppointments.Application.WaitingList.Matching;
+using MedicalAppointments.Application.WaitingList.Outbox;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace MedicalAppointments.Application;
 
 public static class ApplicationDependencyInjection
 {
-    public static IServiceCollection AddApplication(this IServiceCollection services)
+    public static IServiceCollection AddApplication(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddValidatorsFromAssembly(typeof(ApplicationDependencyInjection).Assembly);
 
@@ -69,6 +74,17 @@ public static class ApplicationDependencyInjection
         services.AddScoped<IOutboxHandler, AppointmentCancelledOutboxHandler>();
         services.AddScoped<IOutboxHandler, AppointmentRescheduledOutboxHandler>();
         services.AddScoped<IOutboxHandler, AppointmentStatusChangedOutboxHandler>();
+
+        services.Configure<WaitingListOptions>(configuration.GetSection("WaitingList"));
+
+        services.AddScoped<IWaitingListAccessService, WaitingListAccessService>();
+        services.AddScoped<IWaitingListService, WaitingListService>();
+        services.AddScoped<IWaitingListMatchingService, WaitingListMatchingService>();
+        services.AddScoped<IWaitingListEventNotifier, WaitingListEventNotifier>();
+
+        services.AddScoped<IOutboxHandler, WaitingListOfferCreatedOutboxHandler>();
+        services.AddScoped<IOutboxHandler, WaitingListUpdatedOutboxHandler>();
+        services.AddScoped<IOutboxHandler, WaitingListSlotFreedOutboxHandler>();
 
         return services;
     }

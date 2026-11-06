@@ -1,7 +1,4 @@
-﻿using System.Security.Cryptography;
-using System.Text;
-using System.Text.Json;
-using FluentValidation;
+﻿using FluentValidation;
 using MedicalAppointments.Application.Appointments.Auth;
 using MedicalAppointments.Application.Appointments.Outbox;
 using MedicalAppointments.Application.Common;
@@ -12,10 +9,15 @@ using MedicalAppointments.Application.MedicalStructure.Clinics;
 using MedicalAppointments.Application.MedicalStructure.Doctors;
 using MedicalAppointments.Application.MedicalStructure.Patients;
 using MedicalAppointments.Application.Scheduling.Availability;
+using MedicalAppointments.Application.WaitingList.Outbox;
 using MedicalAppointments.Domain.Appointments;
 using MedicalAppointments.Domain.Idempotency;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using System.Runtime.CompilerServices;
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json;
 
 namespace MedicalAppointments.Application.Appointments;
 
@@ -44,6 +46,7 @@ public sealed class AppointmentBookingService : IAppointmentBookingService
     private readonly IRequestMetadataProvider _requestMetadata;
     private readonly ICorrelationIdProvider _correlationIdProvider;
     private readonly TimeProvider _timeProvider;
+    private readonly IWaitingListEventNotifier _waitingListNotifier;
     private readonly JsonSerializerOptions _jsonOptions;
     private readonly AppointmentBookingOptions _options;
     private readonly ILogger<AppointmentBookingService> _logger;
@@ -65,6 +68,7 @@ public sealed class AppointmentBookingService : IAppointmentBookingService
         IAuditWriter auditWriter,
         IRequestMetadataProvider requestMetadata,
         ICorrelationIdProvider correlationIdProvider,
+        IWaitingListEventNotifier waitingListNotifier,
         TimeProvider timeProvider,
         JsonSerializerOptions jsonOptions,
         IOptions<AppointmentBookingOptions> optionsAccessor,
@@ -86,6 +90,7 @@ public sealed class AppointmentBookingService : IAppointmentBookingService
         _auditWriter = auditWriter;
         _requestMetadata = requestMetadata;
         _correlationIdProvider = correlationIdProvider;
+        _waitingListNotifier = waitingListNotifier;
         _timeProvider = timeProvider;
         _jsonOptions = jsonOptions;
         _options = optionsAccessor.Value;
@@ -298,6 +303,7 @@ public sealed class AppointmentBookingService : IAppointmentBookingService
         appointment.Cancel(now, subject.UserId, command.Reason);
 
         _eventNotifier.EnqueueCancelled(appointment, patientUserId, oldStatus, now, _correlationIdProvider.CorrelationId);
+        EnqueueSlotFreedIfFuture(appointment, now);
 
         EnqueueAudit(
             subject.UserId,
@@ -426,6 +432,8 @@ public sealed class AppointmentBookingService : IAppointmentBookingService
             oldStatus,
             now,
             _correlationIdProvider.CorrelationId);
+
+        EnqueueSlotFreedIfFuture(oldAppointment, now);
 
         EnqueueAudit(
             subject.UserId,
@@ -688,5 +696,34 @@ public sealed class AppointmentBookingService : IAppointmentBookingService
         {
             yield return resource;
         }
+    }
+
+    private void EnqueueSlotFreedIfFuture(
+    Domain.Appointments.Appointment appointment,
+    DateTimeOffset now)
+    {
+        // Solo los estados que liberan un slot FUTURO re-alimentan la waiting list.
+        if (appointment.StartAt <= now)
+        {
+            return;
+        }
+
+        if (appointment.Status
+            is not (Domain.Appointments.AppointmentStatus.Cancelled
+                or Domain.Appointments.AppointmentStatus.NoShow
+                or Domain.Appointments.AppointmentStatus.Rescheduled))
+        {
+            return;
+        }
+
+        _waitingListNotifier.EnqueueSlotFreed(
+            appointment.DoctorId,
+            appointment.ClinicId,
+            appointment.RoomId,
+            appointment.LocalDate,
+            appointment.StartAt,
+            appointment.EndAt,
+            now,
+            _correlationIdProvider.CorrelationId);
     }
 }

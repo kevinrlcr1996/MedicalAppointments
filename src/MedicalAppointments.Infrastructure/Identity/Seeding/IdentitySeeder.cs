@@ -160,7 +160,9 @@ public sealed class IdentitySeeder
             Permissions.ReportsRead,
             Permissions.SettingsManage,
             Permissions.RealtimeTest,
-            Permissions.FoundationTestWrite
+            Permissions.FoundationTestWrite,
+            Permissions.WaitingListReadAll,
+            Permissions.WaitingListManageAll,
         }, now, cancellationToken);
 
         await GrantAsync(Roles.Doctor, new[]
@@ -181,7 +183,8 @@ public sealed class IdentitySeeder
             Permissions.PrescriptionsCreate,
             Permissions.DocumentsRead,
             Permissions.NotificationsRead,
-            Permissions.RealtimeTest
+            Permissions.RealtimeTest,
+            Permissions.WaitingListReadAssigned,
         }, now, cancellationToken);
 
         await GrantAsync(Roles.Receptionist, new[]
@@ -200,7 +203,9 @@ public sealed class IdentitySeeder
             Permissions.WaitingRoomRead,
             Permissions.WaitingRoomManage,
             Permissions.NotificationsRead,
-            Permissions.RealtimeTest
+            Permissions.RealtimeTest,
+            Permissions.WaitingListReadAll,
+            Permissions.WaitingListManageAll,
         }, now, cancellationToken);
 
         await GrantAsync(Roles.Patient, new[]
@@ -217,7 +222,10 @@ public sealed class IdentitySeeder
             Permissions.AppointmentsRescheduleOwn,
 
             Permissions.NotificationsRead,
-            Permissions.RealtimeTest
+            Permissions.RealtimeTest,
+
+            Permissions.WaitingListReadOwn,
+            Permissions.WaitingListManageOwn,
         }, now, cancellationToken);
 
         await _dbContext.SaveChangesAsync(cancellationToken);

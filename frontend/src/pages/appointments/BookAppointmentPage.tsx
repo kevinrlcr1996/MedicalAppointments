@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { z } from 'zod';
-import { CalendarPlus, RefreshCcw } from 'lucide-react';
+import { CalendarPlus, Hourglass, RefreshCcw } from 'lucide-react';
 import { crudApi } from '../../services/api/crudApi';
 import { schedulingApi } from '../../services/api/scheduling';
 import { appointmentsApi } from '../../services/api/appointments';
 import { patientsApi } from '../../services/api/patients';
+import { waitingListApi } from '../../services/api/waitingList';
 import { ApiError } from '../../services/api/apiClient';
 import { useAuth } from '../../contexts/AuthContext';
 import { hasPermission, Permissions } from '../../lib/permissions';
@@ -50,6 +51,7 @@ type BookingFormValues = z.infer<typeof bookingSchema>;
 
 export function BookAppointmentPage() {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
 
   const isPatient = hasPermission(user, Permissions.AppointmentsCreateOwn);
   const isStaff =
@@ -80,6 +82,30 @@ export function BookAppointmentPage() {
       startAtUtc: '',
       reason: '',
       notes: '',
+    },
+  });
+
+  const waitingListMutation = useMutation({
+    mutationFn: async () => {
+      if (!patientQuery.data || !doctorId || !clinicId) {
+        throw new Error('Selecciona un médico y una clínica.');
+      }
+
+      const from = new Date();
+      const to = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
+
+      return waitingListApi.createEntry({
+        patientId: patientQuery.data.id,
+        doctorId,
+        clinicId,
+        preferredFromUtc: from.toISOString(),
+        preferredToUtc: to.toISOString(),
+        priority: 'Normal',
+        note: null,
+      });
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['waiting-list'] });
     },
   });
 
@@ -212,6 +238,18 @@ export function BookAppointmentPage() {
     <div className="space-y-6">
       <PageHeader title="Reservar cita" description="La disponibilidad siempre la calcula el backend." />
 
+      {waitingListMutation.isError ? (
+        <Alert variant="error" title="No se pudo añadir a la lista de espera">
+          {waitingListMutation.error instanceof ApiError ? waitingListMutation.error.message : 'Error inesperado.'}
+        </Alert>
+      ) : null}
+
+      {waitingListMutation.isSuccess ? (
+        <Alert variant="success" title="Añadido a la lista de espera">
+          Te hemos añadido correctamente. Puedes consultar tu entrada desde la lista de espera.
+        </Alert>
+      ) : null}
+
       <Card>
         <form className="space-y-6" onSubmit={form.handleSubmit((values) => mutation.mutate(values))}>
           {isStaff ? (
@@ -264,7 +302,20 @@ export function BookAppointmentPage() {
             ) : availabilityQuery.isFetching ? (
               <Spinner label="Calculando disponibilidad..." />
             ) : !availabilityQuery.data || availabilityQuery.data.slots.length === 0 ? (
-              <EmptyState title="Sin horarios" description="No hay disponibilidad para esa fecha." />
+              <div className="space-y-3">
+                <EmptyState title="Sin horarios" description="No hay disponibilidad para esa fecha." />
+                {isPatient && patientQuery.data ? (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => waitingListMutation.mutate()}
+                    loading={waitingListMutation.isPending}
+                    leftIcon={<Hourglass className="h-4 w-4" />}
+                  >
+                    Apuntarme a la lista de espera
+                  </Button>
+                ) : null}
+              </div>
             ) : (
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 {availabilityQuery.data.slots.map((slot) => (

@@ -10,4 +10,8 @@ public static class OutboxTypes
     public const string AppointmentCancelled = "Appointments.Cancelled";
     public const string AppointmentRescheduled = "Appointments.Rescheduled";
     public const string AppointmentStatusChanged = "Appointments.StatusChanged";
+
+    public const string WaitingListOfferCreated = "WaitingList.OfferCreated";
+    public const string WaitingListUpdated = "WaitingList.Updated";
+    public const string WaitingListSlotFreed = "WaitingList.SlotFreed";
 }

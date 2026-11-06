@@ -60,6 +60,12 @@ export const Permissions = {
 
   MedicalRecordsRead: 'medical_records.read',
   ReportsRead: 'reports.read',
+
+  WaitingListReadOwn: 'waiting_list.read_own',
+  WaitingListManageOwn: 'waiting_list.manage_own',
+  WaitingListReadAssigned: 'waiting_list.read_assigned',
+  WaitingListReadAll: 'waiting_list.read_all',
+  WaitingListManageAll: 'waiting_list.manage_all',
 } as const;
 
 export type Permission = (typeof Permissions)[keyof typeof Permissions];

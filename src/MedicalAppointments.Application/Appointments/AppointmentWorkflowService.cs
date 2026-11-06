@@ -4,6 +4,7 @@ using MedicalAppointments.Application.Common;
 using MedicalAppointments.Application.Common.Audit;
 using MedicalAppointments.Application.Common.Exceptions;
 using MedicalAppointments.Application.MedicalStructure.Patients;
+using MedicalAppointments.Application.WaitingList.Outbox;
 using MedicalAppointments.Domain.Appointments;
 
 namespace MedicalAppointments.Application.Appointments;
@@ -18,6 +19,7 @@ public sealed class AppointmentWorkflowService : IAppointmentWorkflowService
     private readonly IAuditWriter _auditWriter;
     private readonly IRequestMetadataProvider _requestMetadata;
     private readonly ICorrelationIdProvider _correlationIdProvider;
+    private readonly IWaitingListEventNotifier _waitingListNotifier;
     private readonly TimeProvider _timeProvider;
 
     public AppointmentWorkflowService(
@@ -29,6 +31,7 @@ public sealed class AppointmentWorkflowService : IAppointmentWorkflowService
         IAuditWriter auditWriter,
         IRequestMetadataProvider requestMetadata,
         ICorrelationIdProvider correlationIdProvider,
+        IWaitingListEventNotifier waitingListNotifier,
         TimeProvider timeProvider)
     {
         _store = store;
@@ -39,6 +42,7 @@ public sealed class AppointmentWorkflowService : IAppointmentWorkflowService
         _auditWriter = auditWriter;
         _requestMetadata = requestMetadata;
         _correlationIdProvider = correlationIdProvider;
+        _waitingListNotifier = waitingListNotifier;
         _timeProvider = timeProvider;
     }
 
@@ -134,6 +138,8 @@ public sealed class AppointmentWorkflowService : IAppointmentWorkflowService
             now,
             _correlationIdProvider.CorrelationId);
 
+        EnqueueSlotFreedIfFuture(appointment, now);
+
         _auditWriter.Enqueue(new AuditEntry(
             UserId: subject.UserId,
             Action: auditAction,
@@ -157,5 +163,34 @@ public sealed class AppointmentWorkflowService : IAppointmentWorkflowService
             ?? throw new NotFoundException("Appointment not found.");
 
         return AppointmentQueryService.Map(entity);
+    }
+
+    private void EnqueueSlotFreedIfFuture(
+    Domain.Appointments.Appointment appointment,
+    DateTimeOffset now)
+    {
+        // Solo los estados que liberan un slot FUTURO re-alimentan la waiting list.
+        if (appointment.StartAt <= now)
+        {
+            return;
+        }
+
+        if (appointment.Status
+            is not (Domain.Appointments.AppointmentStatus.Cancelled
+                or Domain.Appointments.AppointmentStatus.NoShow
+                or Domain.Appointments.AppointmentStatus.Rescheduled))
+        {
+            return;
+        }
+
+        _waitingListNotifier.EnqueueSlotFreed(
+            appointment.DoctorId,
+            appointment.ClinicId,
+            appointment.RoomId,
+            appointment.LocalDate,
+            appointment.StartAt,
+            appointment.EndAt,
+            now,
+            _correlationIdProvider.CorrelationId);
     }
 }

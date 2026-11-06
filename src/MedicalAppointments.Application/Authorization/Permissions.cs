@@ -98,6 +98,12 @@ public static class Permissions
 
     public const string TelemedicineUse = "telemedicine.use";
 
+    public const string WaitingListReadOwn = "waiting_list.read_own";
+    public const string WaitingListManageOwn = "waiting_list.manage_own";
+    public const string WaitingListReadAssigned = "waiting_list.read_assigned";
+    public const string WaitingListReadAll = "waiting_list.read_all";
+    public const string WaitingListManageAll = "waiting_list.manage_all";
+
     public static readonly IReadOnlyList<string> All =
     [
         RealtimeTest,
@@ -167,6 +173,11 @@ public static class Permissions
         AuditRead,
         SettingsManage,
         ConsentManage,
-        TelemedicineUse
+        TelemedicineUse,
+        WaitingListReadOwn,
+        WaitingListManageOwn,
+        WaitingListReadAssigned,
+        WaitingListReadAll,
+        WaitingListManageAll
     ];
 }

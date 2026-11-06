@@ -10,4 +10,7 @@ public static class RealtimeEvents
     public const string AppointmentCancelled = "AppointmentCancelled";
     public const string AppointmentRescheduled = "AppointmentRescheduled";
     public const string AppointmentStatusChanged = "AppointmentStatusChanged";
+
+    public const string WaitingListOfferCreated = "WaitingListOfferCreated";
+    public const string WaitingListUpdated = "WaitingListUpdated";
 }

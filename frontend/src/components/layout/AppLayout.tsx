@@ -7,6 +7,7 @@ import {
   CalendarClock,
   CalendarPlus,
   DoorOpen,
+  Hourglass,
   LayoutDashboard,
   LogOut,
   Menu,
@@ -65,6 +66,16 @@ const navItems: NavItem[] = [
   { to: '/admin/resources', label: 'Recursos', icon: CalendarClock, permissions: [Permissions.ResourcesRead] },
   { to: '/admin/doctors', label: 'Médicos', icon: Users, permissions: [Permissions.DoctorsRead] },
   { to: '/admin/patients', label: 'Pacientes', icon: Users, permissions: [Permissions.PatientsRead] },
+  {
+    to: '/waiting-list',
+    label: 'Lista de espera',
+    icon: Hourglass,
+    permissions: [
+      Permissions.WaitingListReadAll,
+      Permissions.WaitingListReadAssigned,
+      Permissions.WaitingListReadOwn,
+    ],
+  },
 ];
 
 export function AppLayout() {

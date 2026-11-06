@@ -59,6 +59,17 @@ public static class AuthorizationDependencyInjection
             options.AddPolicy(Policies.AppointmentsMarkNoShow, policy =>
                 policy.RequireAssertion(context =>
                     context.User.HasPermission(Permissions.AppointmentsMarkNoShow)));
+
+            options.AddPolicy(Policies.WaitingListRead, policy =>
+                policy.RequireAssertion(context =>
+                    context.User.HasPermission(Permissions.WaitingListReadAll) ||
+                    context.User.HasPermission(Permissions.WaitingListReadAssigned) ||
+                    context.User.HasPermission(Permissions.WaitingListReadOwn)));
+
+            options.AddPolicy(Policies.WaitingListManage, policy =>
+                policy.RequireAssertion(context =>
+                    context.User.HasPermission(Permissions.WaitingListManageAll) ||
+                    context.User.HasPermission(Permissions.WaitingListManageOwn)));
         });
 
         return services;

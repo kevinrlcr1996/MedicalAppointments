@@ -24,6 +24,7 @@ import { AvailabilityPage } from './pages/scheduling/AvailabilityPage';
 import { RequireAnyPermission } from './components/navigation/RequireAnyPermission';
 import { AppointmentsPage } from './pages/appointments/AppointmentsPage';
 import { BookAppointmentPage } from './pages/appointments/BookAppointmentPage';
+import { WaitingListPage } from './pages/waiting-list/WaitingListPage';
 
 export default function App() {
   return (
@@ -75,6 +76,20 @@ export default function App() {
 
           <Route element={<RequirePermission permission={Permissions.AvailabilityRead} />}>
             <Route path="/availability" element={<AvailabilityPage />} />
+          </Route>
+
+          <Route
+            element={
+              <RequireAnyPermission
+                permissions={[
+                  Permissions.WaitingListReadAll,
+                  Permissions.WaitingListReadAssigned,
+                  Permissions.WaitingListReadOwn,
+                ]}
+              />
+            }
+          >
+            <Route path="/waiting-list" element={<WaitingListPage />} />
           </Route>
 
           <Route path="/forbidden" element={<ForbiddenPage />} />

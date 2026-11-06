@@ -5,6 +5,7 @@ using MedicalAppointments.Domain.Identity;
 using MedicalAppointments.Domain.MedicalStructure;
 using MedicalAppointments.Domain.Outbox;
 using MedicalAppointments.Domain.Scheduling;
+using MedicalAppointments.Domain.WaitingList;
 using Microsoft.EntityFrameworkCore;
 
 namespace MedicalAppointments.Infrastructure.Persistence;
@@ -43,6 +44,8 @@ public sealed class AppDbContext : DbContext
     public DbSet<Appointment> Appointments => Set<Appointment>();
     public DbSet<IdempotencyRecord> IdempotencyRecords => Set<IdempotencyRecord>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+    public DbSet<WaitingListEntry> WaitingListEntries => Set<WaitingListEntry>();
+    public DbSet<WaitingListOffer> WaitingListOffers => Set<WaitingListOffer>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
