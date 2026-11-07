@@ -11,6 +11,7 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
+  MonitorPlay,
   Stethoscope,
   Users,
   X,
@@ -76,6 +77,8 @@ const navItems: NavItem[] = [
       Permissions.WaitingListReadOwn,
     ],
   },
+  { to: '/waiting-room', label: 'Sala de espera', icon: DoorOpen, permissions: [Permissions.WaitingRoomRead, Permissions.WaitingRoomManage, Permissions.AppointmentsCheckIn, Permissions.AppointmentsComplete, Permissions.AppointmentsMarkNoShow] },
+  { to: '/waiting-room/display', label: 'Pantalla de sala', icon: MonitorPlay, permissions: [Permissions.WaitingRoomRead, Permissions.WaitingRoomManage] },
 ];
 
 export function AppLayout() {

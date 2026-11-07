@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { CalendarClock, RefreshCcw } from 'lucide-react';
 import { crudApi } from '../../services/api/crudApi';
 import { schedulingApi } from '../../services/api/scheduling';
-import { ApiError } from '../../services/api/apiClient';
+import { apiClient, ApiError } from '../../services/api/apiClient';
 import { useAuth } from '../../contexts/AuthContext';
 import { hasPermission, Permissions } from '../../lib/permissions';
 import { useSchedulingRealtime } from '../../hooks/useSchedulingRealtime';
@@ -28,7 +28,7 @@ interface DoctorOption {
     id: string;
     firstName: string;
     lastName: string;
-    clinics: DoctorClinicRef[];
+    clinics?: DoctorClinicRef[];
 }
 
 export function AvailabilityPage() {
@@ -40,18 +40,22 @@ export function AvailabilityPage() {
     const [clinicId, setClinicId] = useState('');
     const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
 
+    // FIX 404: lista de médicos por endpoint paginado.
     const doctorsQuery = useQuery({
         queryKey: ['doctors-options'],
         queryFn: () => crudApi.list<DoctorOption>('/api/v1/doctors', { page: 1, pageSize: 100, status: 'Active' }),
         enabled: hasPermission(user, Permissions.DoctorsRead),
     });
 
-    const selectedDoctor = useMemo(
-        () => doctorsQuery.data?.items.find((doctor) => doctor.id === doctorId) ?? null,
-        [doctorsQuery.data, doctorId],
-    );
+    // FIX 404: clínicas del médico elegido vía GetById.
+    const selectedDoctorQuery = useQuery({
+        queryKey: ['doctor-detail', doctorId],
+        queryFn: () => apiClient.get<DoctorOption>(`/api/v1/doctors/${doctorId}`),
+        enabled: Boolean(doctorId),
+    });
 
-    // Clínicas DERIVADAS del médico. Sin endpoint /clinics global, sin clinics.read.
+    const selectedDoctor = selectedDoctorQuery.data ?? null;
+
     const clinicOptions = useMemo(
         () =>
             (selectedDoctor?.clinics ?? []).map((clinic) => ({
@@ -69,7 +73,7 @@ export function AvailabilityPage() {
 
     function handleDoctorChange(value: string) {
         setDoctorId(value);
-        setClinicId(''); // al cambiar médico, la clínica anterior ya no aplica
+        setClinicId('');
     }
 
     if (doctorsQuery.isLoading) {

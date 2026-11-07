@@ -28,4 +28,9 @@ public static class RealtimeGroups
     {
         return $"appointment:{appointmentId}";
     }
+
+    public static string ForRoom(Guid roomId)
+    {
+        return $"room:{roomId}";
+    }
 }

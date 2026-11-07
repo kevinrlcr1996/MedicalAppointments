@@ -13,4 +13,8 @@ public static class RealtimeEvents
 
     public const string WaitingListOfferCreated = "WaitingListOfferCreated";
     public const string WaitingListUpdated = "WaitingListUpdated";
+
+    public const string WaitingRoomUpdated = "WaitingRoomUpdated";
+    public const string PatientCalled = "PatientCalled";
+    public const string PatientRecalled = "PatientRecalled";
 }

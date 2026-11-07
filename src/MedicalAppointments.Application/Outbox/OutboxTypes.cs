@@ -14,4 +14,8 @@ public static class OutboxTypes
     public const string WaitingListOfferCreated = "WaitingList.OfferCreated";
     public const string WaitingListUpdated = "WaitingList.Updated";
     public const string WaitingListSlotFreed = "WaitingList.SlotFreed";
+
+    public const string WaitingRoomUpdated = "WaitingRoom.Updated";
+    public const string WaitingRoomPatientCalled = "WaitingRoom.PatientCalled";
+    public const string WaitingRoomPatientRecalled = "WaitingRoom.PatientRecalled";
 }

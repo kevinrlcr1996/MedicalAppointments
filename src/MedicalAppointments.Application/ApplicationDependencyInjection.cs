@@ -25,6 +25,9 @@ using MedicalAppointments.Application.WaitingList;
 using MedicalAppointments.Application.WaitingList.Common;
 using MedicalAppointments.Application.WaitingList.Matching;
 using MedicalAppointments.Application.WaitingList.Outbox;
+using MedicalAppointments.Application.WaitingRoom;
+using MedicalAppointments.Application.WaitingRoom.Auth;
+using MedicalAppointments.Application.WaitingRoom.Outbox;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -85,6 +88,15 @@ public static class ApplicationDependencyInjection
         services.AddScoped<IOutboxHandler, WaitingListOfferCreatedOutboxHandler>();
         services.AddScoped<IOutboxHandler, WaitingListUpdatedOutboxHandler>();
         services.AddScoped<IOutboxHandler, WaitingListSlotFreedOutboxHandler>();
+
+        services.AddScoped<IWaitingRoomAccessService, WaitingRoomAccessService>();
+        services.AddScoped<IWaitingRoomBoardService, WaitingRoomBoardService>();
+        services.AddScoped<IWaitingRoomCallService, WaitingRoomCallService>();
+        services.AddScoped<IWaitingRoomEventNotifier, WaitingRoomEventNotifier>();
+
+        services.AddScoped<IOutboxHandler, WaitingRoomUpdatedOutboxHandler>();
+        services.AddScoped<IOutboxHandler, PatientCalledOutboxHandler>();
+        services.AddScoped<IOutboxHandler, PatientRecalledOutboxHandler>();
 
         return services;
     }

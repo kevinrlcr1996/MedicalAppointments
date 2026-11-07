@@ -9,7 +9,7 @@ import { schedulingApi } from '../../services/api/scheduling';
 import { appointmentsApi } from '../../services/api/appointments';
 import { patientsApi } from '../../services/api/patients';
 import { waitingListApi } from '../../services/api/waitingList';
-import { ApiError } from '../../services/api/apiClient';
+import { apiClient, ApiError } from '../../services/api/apiClient';
 import { useAuth } from '../../contexts/AuthContext';
 import { hasPermission, Permissions } from '../../lib/permissions';
 import { Alert } from '../../components/ui/Alert';
@@ -34,7 +34,15 @@ interface DoctorOption {
   id: string;
   firstName: string;
   lastName: string;
-  clinics: DoctorClinicRef[];
+  clinics?: DoctorClinicRef[];
+}
+
+interface PatientOption {
+  id: string;
+  firstName: string;
+  lastName: string;
+  identificationNumber?: string | null;
+  email?: string | null;
 }
 
 const bookingSchema = z.object({
@@ -58,15 +66,22 @@ export function BookAppointmentPage() {
     hasPermission(user, Permissions.AppointmentsCreateAll) ||
     hasPermission(user, Permissions.AppointmentsCreateAssigned);
 
+  // FIX gate: el onboarding de paciente SOLO aplica al rol Patient puro.
+  // SuperAdmin/Admin/Receptionist tienen isPatient=true por bypass pero son staff:
+  // deben ver el buscador de paciente, no el formulario de ficha.
+  const isPatientOnly = isPatient && !isStaff;
+
   const [selectedSlotKey, setSelectedSlotKey] = useState<string>('');
+  const [patientLabel, setPatientLabel] = useState('');
 
   const patientQuery = useQuery({
     queryKey: ['patients-me'],
     queryFn: patientsApi.getMe,
-    enabled: isPatient,
+    enabled: isPatientOnly, // FIX: no disparar /patients/me para staff (evita el 404 que activaba el onboarding)
     retry: false,
   });
 
+  // FIX 404: lista de médicos por endpoint paginado (existe desde Fase 3).
   const doctorsQuery = useQuery({
     queryKey: ['doctors-options'],
     queryFn: () => crudApi.list<DoctorOption>('/api/v1/doctors', { page: 1, pageSize: 100, status: 'Active' }),
@@ -85,40 +100,20 @@ export function BookAppointmentPage() {
     },
   });
 
-  const waitingListMutation = useMutation({
-    mutationFn: async () => {
-      if (!patientQuery.data || !doctorId || !clinicId) {
-        throw new Error('Selecciona un médico y una clínica.');
-      }
-
-      const from = new Date();
-      const to = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
-
-      return waitingListApi.createEntry({
-        patientId: patientQuery.data.id,
-        doctorId,
-        clinicId,
-        preferredFromUtc: from.toISOString(),
-        preferredToUtc: to.toISOString(),
-        priority: 'Normal',
-        note: null,
-      });
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['waiting-list'] });
-    },
-  });
-
   const doctorId = form.watch('doctorId');
   const clinicId = form.watch('clinicId');
   const date = form.watch('date');
+  const patientIdValue = form.watch('patientId');
 
-  const selectedDoctor = useMemo(
-    () => doctorsQuery.data?.items.find((doctor) => doctor.id === doctorId) ?? null,
-    [doctorsQuery.data, doctorId],
-  );
+  // FIX 404: clínicas del médico elegido vía GetById (incluye Clinics desde Fase 3).
+  const selectedDoctorQuery = useQuery({
+    queryKey: ['doctor-detail', doctorId],
+    queryFn: () => apiClient.get<DoctorOption>(`/api/v1/doctors/${doctorId}`),
+    enabled: Boolean(doctorId),
+  });
 
-  // Clínicas DERIVADAS del médico. Sin /clinics global, sin clinics.read.
+  const selectedDoctor = selectedDoctorQuery.data ?? null;
+
   const clinicOptions = useMemo(
     () =>
       (selectedDoctor?.clinics ?? []).map((clinic) => ({
@@ -137,10 +132,10 @@ export function BookAppointmentPage() {
   useEffect(() => {
     if (patientQuery.data) {
       form.setValue('patientId', patientQuery.data.id);
+      setPatientLabel(`${patientQuery.data.firstName} ${patientQuery.data.lastName}`);
     }
   }, [patientQuery.data, form]);
 
-  // Al cambiar médico, la clínica y el slot anteriores dejan de valer.
   useEffect(() => {
     form.setValue('clinicId', '');
     form.setValue('startAtUtc', '');
@@ -156,7 +151,6 @@ export function BookAppointmentPage() {
     if (!availabilityQuery.data || !selectedSlotKey) {
       return null;
     }
-
     return availabilityQuery.data.slots.find((slot) => slot.startAtUtc === selectedSlotKey) ?? null;
   }, [availabilityQuery.data, selectedSlotKey]);
 
@@ -164,10 +158,12 @@ export function BookAppointmentPage() {
 
   const mutation = useMutation({
     mutationFn: async (values: BookingFormValues) => {
+      if (isStaff && !values.patientId) {
+        throw new Error('Selecciona un paciente.');
+      }
       if (!selectedSlot) {
         throw new Error('Selecciona un horario disponible.');
       }
-
       return appointmentsApi.create(
         {
           patientId: values.patientId ?? '',
@@ -195,13 +191,36 @@ export function BookAppointmentPage() {
         notes: '',
       });
       setSelectedSlotKey('');
+      if (!isPatientOnly) {
+        setPatientLabel('');
+      }
     },
   });
 
-  const needsOnboarding =
-    isPatient && patientQuery.isError && (patientQuery.error as ApiError)?.status === 404;
+  const joinListMutation = useMutation({
+    mutationFn: () => {
+      const from = new Date();
+      const to = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
+      return waitingListApi.createEntry({
+        patientId: patientQuery.data!.id,
+        doctorId,
+        clinicId,
+        preferredFromUtc: from.toISOString(),
+        preferredToUtc: to.toISOString(),
+        priority: 'Normal',
+        note: null,
+      });
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['waiting-list'] });
+    },
+  });
 
-  if (isPatient && patientQuery.isLoading) {
+  // FIX gate: onboarding solo para Patient puro.
+  const needsOnboarding =
+    isPatientOnly && patientQuery.isError && (patientQuery.error as ApiError)?.status === 404;
+
+  if (isPatientOnly && patientQuery.isLoading) {
     return <Spinner label="Cargando tu perfil..." />;
   }
 
@@ -214,7 +233,7 @@ export function BookAppointmentPage() {
     );
   }
 
-  if (isPatient && patientQuery.isError) {
+  if (isPatientOnly && patientQuery.isError) {
     return (
       <div className="space-y-6">
         <PageHeader title="Reservar cita" description="No se pudo cargar tu perfil." />
@@ -238,23 +257,26 @@ export function BookAppointmentPage() {
     <div className="space-y-6">
       <PageHeader title="Reservar cita" description="La disponibilidad siempre la calcula el backend." />
 
-      {waitingListMutation.isError ? (
-        <Alert variant="error" title="No se pudo añadir a la lista de espera">
-          {waitingListMutation.error instanceof ApiError ? waitingListMutation.error.message : 'Error inesperado.'}
-        </Alert>
-      ) : null}
-
-      {waitingListMutation.isSuccess ? (
-        <Alert variant="success" title="Añadido a la lista de espera">
-          Te hemos añadido correctamente. Puedes consultar tu entrada desde la lista de espera.
-        </Alert>
-      ) : null}
-
       <Card>
         <form className="space-y-6" onSubmit={form.handleSubmit((values) => mutation.mutate(values))}>
           {isStaff ? (
-            <FormField label="Paciente (PatientId)" htmlFor="patientId" required>
-              <Input id="patientId" {...form.register('patientId')} placeholder="Guid del paciente" />
+            <FormField
+              label="Paciente"
+              htmlFor="patient-search"
+              required
+              error={isStaff && !patientIdValue ? 'Selecciona un paciente.' : undefined}
+            >
+              <PatientPicker
+                selectedLabel={patientLabel}
+                onPick={(id, label) => {
+                  form.setValue('patientId', id, { shouldValidate: true });
+                  setPatientLabel(label);
+                }}
+                onClear={() => {
+                  form.setValue('patientId', '', { shouldValidate: true });
+                  setPatientLabel('');
+                }}
+              />
             </FormField>
           ) : (
             <Input type="hidden" {...form.register('patientId')} />
@@ -304,16 +326,33 @@ export function BookAppointmentPage() {
             ) : !availabilityQuery.data || availabilityQuery.data.slots.length === 0 ? (
               <div className="space-y-3">
                 <EmptyState title="Sin horarios" description="No hay disponibilidad para esa fecha." />
-                {isPatient && patientQuery.data ? (
+                {isPatientOnly && patientQuery.data ? (
                   <Button
                     type="button"
                     variant="secondary"
-                    onClick={() => waitingListMutation.mutate()}
-                    loading={waitingListMutation.isPending}
+                    loading={joinListMutation.isPending}
+                    disabled={joinListMutation.isPending || joinListMutation.isSuccess}
+                    onClick={() => joinListMutation.mutate()}
                     leftIcon={<Hourglass className="h-4 w-4" />}
                   >
-                    Apuntarme a la lista de espera
+                    {joinListMutation.isSuccess ? 'Apuntado a la lista' : 'Apuntarme a la lista de espera'}
                   </Button>
+                ) : null}
+
+                {joinListMutation.isSuccess ? (
+                  <Alert variant="success" title="Estás en la lista de espera">
+                    Te avisaremos cuando se libere un hueco compatible. Revísalo en <strong>Lista de espera</strong>.
+                  </Alert>
+                ) : null}
+
+                {joinListMutation.isError ? (
+                  <Alert variant="error" title="No pudimos apuntarte">
+                    {joinListMutation.error instanceof ApiError
+                      ? `${joinListMutation.error.status}: ${joinListMutation.error.message}`
+                      : joinListMutation.error instanceof Error
+                        ? joinListMutation.error.message
+                        : 'Error inesperado.'}
+                  </Alert>
                 ) : null}
               </div>
             ) : (
@@ -365,13 +404,93 @@ export function BookAppointmentPage() {
           <Button
             type="submit"
             loading={mutation.isPending}
-            disabled={!selectedSlot || (isPatient && !patientQuery.data)}
+            disabled={
+              !selectedSlot ||
+              (isPatientOnly && !patientQuery.data) ||
+              (isStaff && !patientIdValue)
+            }
             leftIcon={<CalendarPlus className="h-4 w-4" />}
           >
             Reservar cita
           </Button>
         </form>
       </Card>
+    </div>
+  );
+}
+
+function PatientPicker({
+  selectedLabel,
+  onPick,
+  onClear,
+}: {
+  selectedLabel: string;
+  onPick: (id: string, label: string) => void;
+  onClear: () => void;
+}) {
+  const [search, setSearch] = useState('');
+
+  const query = useQuery({
+    queryKey: ['patients-search', search],
+    queryFn: () => crudApi.list<PatientOption>('/api/v1/patients', { page: 1, pageSize: 20, search }),
+    enabled: search.trim().length >= 2,
+  });
+
+  const results = query.data?.items ?? [];
+
+  return (
+    <div className="space-y-2">
+      {selectedLabel ? (
+        <div className="flex items-center justify-between rounded-lg bg-sky-50 px-3 py-2 text-sm dark:bg-sky-950">
+          <span className="font-medium text-sky-800 dark:text-sky-200">{selectedLabel}</span>
+          <button type="button" onClick={onClear} className="text-xs text-sky-700 underline dark:text-sky-300">
+            cambiar
+          </button>
+        </div>
+      ) : (
+        <input
+          id="patient-search"
+          type="text"
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          placeholder="Buscar paciente por nombre, identificación o teléfono…"
+          className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm dark:border-slate-700 dark:bg-slate-900"
+        />
+      )}
+
+      {!selectedLabel && search.trim().length >= 2 ? (
+        <div className="max-h-60 overflow-auto rounded-xl border border-slate-200 dark:border-slate-800">
+          {query.isFetching ? (
+            <p className="px-3 py-2 text-xs text-slate-500 dark:text-slate-400">Buscando…</p>
+          ) : results.length === 0 ? (
+            <p className="px-3 py-2 text-xs text-slate-500 dark:text-slate-400">Sin resultados.</p>
+          ) : (
+            results.map((patient) => (
+              <button
+                key={patient.id}
+                type="button"
+                onClick={() => {
+                  onPick(patient.id, `${patient.firstName} ${patient.lastName}`);
+                  setSearch('');
+                }}
+                className="block w-full px-3 py-2 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-800"
+              >
+                <span className="font-medium text-slate-900 dark:text-slate-50">
+                  {patient.firstName} {patient.lastName}
+                </span>
+                {patient.identificationNumber ? (
+                  <span className="ml-2 text-xs text-slate-500 dark:text-slate-400">
+                    · {patient.identificationNumber}
+                  </span>
+                ) : null}
+                {patient.email ? (
+                  <span className="ml-2 text-xs text-slate-400 dark:text-slate-500">· {patient.email}</span>
+                ) : null}
+              </button>
+            ))
+          )}
+        </div>
+      ) : null}
     </div>
   );
 }

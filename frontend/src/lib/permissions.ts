@@ -66,6 +66,9 @@ export const Permissions = {
   WaitingListReadAssigned: 'waiting_list.read_assigned',
   WaitingListReadAll: 'waiting_list.read_all',
   WaitingListManageAll: 'waiting_list.manage_all',
+
+  WaitingRoomRead: 'waiting_room.read',
+  WaitingRoomManage: 'waiting_room.manage',
 } as const;
 
 export type Permission = (typeof Permissions)[keyof typeof Permissions];

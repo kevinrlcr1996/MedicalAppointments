@@ -20,6 +20,7 @@ using MedicalAppointments.Application.Scheduling.DoctorSchedules;
 using MedicalAppointments.Application.Scheduling.Holidays;
 using MedicalAppointments.Application.Scheduling.ScheduleExceptions;
 using MedicalAppointments.Application.WaitingList.Stores;
+using MedicalAppointments.Application.WaitingRoom.Stores;
 using MedicalAppointments.Infrastructure.Appointments.Persistence;
 using MedicalAppointments.Infrastructure.Auditing;
 using MedicalAppointments.Infrastructure.Auth;
@@ -40,6 +41,7 @@ using MedicalAppointments.Infrastructure.Scheduling.Time;
 using MedicalAppointments.Infrastructure.Services;
 using MedicalAppointments.Infrastructure.WaitingList.Jobs;
 using MedicalAppointments.Infrastructure.WaitingList.Persistence;
+using MedicalAppointments.Infrastructure.WaitingRoom.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -122,6 +124,8 @@ public static class InfrastructureDependencyInjection
         services.AddScoped<IWaitingListEntryStore, EfWaitingListEntryStore>();
         services.AddScoped<IWaitingListOfferStore, EfWaitingListOfferStore>();
         services.AddHostedService<WaitingListOfferExpirationWorker>();
+
+        services.AddScoped<IWaitingRoomCallStore, EfWaitingRoomCallStore>();
 
         ConfigureNotifications(services, configuration);
 

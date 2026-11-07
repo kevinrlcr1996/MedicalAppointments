@@ -66,4 +66,20 @@ public sealed class NotificationHub : Hub
             Context.ConnectionId,
             RealtimeGroups.ForClinic(clinicId));
     }
+
+    public async Task JoinRoomGroup(Guid roomId)
+    {
+        if (Context.User is null ||
+            !await _accessService.CanJoinRoomGroupAsync(Context.User, roomId, CancellationToken.None))
+        {
+            throw new HubException("Not authorized to join this room group.");
+        }
+
+        await Groups.AddToGroupAsync(Context.ConnectionId, RealtimeGroups.ForRoom(roomId));
+    }
+
+    public async Task LeaveRoomGroup(Guid roomId)
+    {
+        await Groups.RemoveFromGroupAsync(Context.ConnectionId, RealtimeGroups.ForRoom(roomId));
+    }
 }

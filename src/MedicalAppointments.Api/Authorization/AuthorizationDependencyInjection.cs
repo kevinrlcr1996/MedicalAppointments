@@ -70,6 +70,19 @@ public static class AuthorizationDependencyInjection
                 policy.RequireAssertion(context =>
                     context.User.HasPermission(Permissions.WaitingListManageAll) ||
                     context.User.HasPermission(Permissions.WaitingListManageOwn)));
+
+            options.AddPolicy(Policies.WaitingRoomRead, policy =>
+                policy.RequireAssertion(context =>
+                    context.User.HasPermission(Permissions.WaitingRoomRead) ||
+                    context.User.HasPermission(Permissions.WaitingRoomManage) ||
+                    context.User.HasPermission(Permissions.AppointmentsReadAssigned)));
+
+            options.AddPolicy(Policies.WaitingRoomOperate, policy =>
+                policy.RequireAssertion(context =>
+                    context.User.HasPermission(Permissions.WaitingRoomManage) ||
+                    context.User.HasPermission(Permissions.AppointmentsCheckIn) ||
+                    context.User.HasPermission(Permissions.AppointmentsComplete) ||
+                    context.User.HasPermission(Permissions.AppointmentsMarkNoShow)));
         });
 
         return services;

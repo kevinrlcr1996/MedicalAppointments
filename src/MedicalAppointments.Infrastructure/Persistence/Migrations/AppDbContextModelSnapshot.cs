@@ -1592,6 +1592,86 @@ namespace MedicalAppointments.Infrastructure.Persistence.Migrations
                     b.ToTable("WaitingListOffers", (string)null);
                 });
 
+            modelBuilder.Entity("MedicalAppointments.Domain.WaitingRoom.WaitingRoomCall", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset?>("AnsweredAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid>("AppointmentId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset?>("CalledAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid>("ClinicId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset?>("CompletedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid>("DoctorId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateOnly>("LocalDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("RecallCount")
+                        .HasColumnType("int");
+
+                    b.Property<Guid?>("RoomId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<int>("SequenceNumber")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset?>("SkippedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AppointmentId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_WaitingRoomCalls_AppointmentId");
+
+                    b.HasIndex("ClinicId");
+
+                    b.HasIndex("RoomId");
+
+                    b.HasIndex("DoctorId", "ClinicId", "LocalDate", "SequenceNumber")
+                        .IsUnique()
+                        .HasDatabaseName("IX_WaitingRoomCalls_DoctorId_ClinicId_LocalDate_SequenceNumber");
+
+                    b.HasIndex("DoctorId", "ClinicId", "LocalDate", "Status")
+                        .HasDatabaseName("IX_WaitingRoomCalls_Board");
+
+                    b.ToTable("WaitingRoomCalls", (string)null);
+                });
+
             modelBuilder.Entity("MedicalAppointments.Domain.Appointments.Appointment", b =>
                 {
                     b.HasOne("MedicalAppointments.Domain.MedicalStructure.Clinic", "Clinic")
@@ -1850,6 +1930,40 @@ namespace MedicalAppointments.Infrastructure.Persistence.Migrations
                     b.Navigation("Entry");
 
                     b.Navigation("Patient");
+
+                    b.Navigation("Room");
+                });
+
+            modelBuilder.Entity("MedicalAppointments.Domain.WaitingRoom.WaitingRoomCall", b =>
+                {
+                    b.HasOne("MedicalAppointments.Domain.Appointments.Appointment", "Appointment")
+                        .WithMany()
+                        .HasForeignKey("AppointmentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("MedicalAppointments.Domain.MedicalStructure.Clinic", "Clinic")
+                        .WithMany()
+                        .HasForeignKey("ClinicId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MedicalAppointments.Domain.MedicalStructure.Doctor", "Doctor")
+                        .WithMany()
+                        .HasForeignKey("DoctorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MedicalAppointments.Domain.MedicalStructure.Room", "Room")
+                        .WithMany()
+                        .HasForeignKey("RoomId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Appointment");
+
+                    b.Navigation("Clinic");
+
+                    b.Navigation("Doctor");
 
                     b.Navigation("Room");
                 });

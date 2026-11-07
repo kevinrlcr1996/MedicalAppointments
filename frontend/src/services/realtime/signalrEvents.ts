@@ -8,6 +8,9 @@ export const SignalREvents = {
   AppointmentStatusChanged: 'AppointmentStatusChanged',
   WaitingListOfferCreated: 'WaitingListOfferCreated',
   WaitingListUpdated: 'WaitingListUpdated',
+  WaitingRoomUpdated: 'WaitingRoomUpdated',
+  PatientCalled: 'PatientCalled',
+  PatientRecalled: 'PatientRecalled',
 } as const;
 
 export const SignalRGroups = {
