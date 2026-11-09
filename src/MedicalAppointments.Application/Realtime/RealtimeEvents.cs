@@ -19,4 +19,5 @@ public static class RealtimeEvents
     public const string PatientRecalled = "PatientRecalled";
 
     public const string ClinicalNoteUpdated = "ClinicalNoteUpdated";
+    public const string ClinicalAttachmentUpdated = "ClinicalAttachmentUpdated";
 }

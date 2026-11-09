@@ -11,4 +11,11 @@ public interface IClinicalRecordsEventNotifier
         string changeType,
         DateTimeOffset now,
         string? correlationId);
+
+    void EnqueueAttachmentEvent(
+        ClinicalAttachment attachment,
+        Domain.Appointments.Appointment appointment,
+        string changeType,
+        DateTimeOffset now,
+        string? correlationId);
 }

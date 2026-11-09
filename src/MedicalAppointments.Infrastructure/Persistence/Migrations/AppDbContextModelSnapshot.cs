@@ -167,6 +167,75 @@ namespace MedicalAppointments.Infrastructure.Persistence.Migrations
                     b.ToTable("AuditLogs", (string)null);
                 });
 
+            modelBuilder.Entity("MedicalAppointments.Domain.ClinicalRecords.ClinicalAttachment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<Guid>("NoteId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<string>("ScanStatus")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateTimeOffset?>("ScannedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Sha256Hex")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<long>("SizeBytes")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("StorageKey")
+                        .IsRequired()
+                        .HasMaxLength(400)
+                        .HasColumnType("nvarchar(400)");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid>("UploadedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NoteId")
+                        .HasDatabaseName("IX_ClinicalAttachments_NoteId");
+
+                    b.HasIndex("ScanStatus")
+                        .HasDatabaseName("IX_ClinicalAttachments_ScanStatus");
+
+                    b.HasIndex("Sha256Hex")
+                        .HasDatabaseName("IX_ClinicalAttachments_Sha256");
+
+                    b.ToTable("ClinicalAttachments", (string)null);
+                });
+
             modelBuilder.Entity("MedicalAppointments.Domain.ClinicalRecords.ClinicalNote", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1782,6 +1851,17 @@ namespace MedicalAppointments.Infrastructure.Persistence.Migrations
                     b.Navigation("Patient");
 
                     b.Navigation("Room");
+                });
+
+            modelBuilder.Entity("MedicalAppointments.Domain.ClinicalRecords.ClinicalAttachment", b =>
+                {
+                    b.HasOne("MedicalAppointments.Domain.ClinicalRecords.ClinicalNote", "Note")
+                        .WithMany()
+                        .HasForeignKey("NoteId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Note");
                 });
 
             modelBuilder.Entity("MedicalAppointments.Domain.ClinicalRecords.ClinicalNote", b =>

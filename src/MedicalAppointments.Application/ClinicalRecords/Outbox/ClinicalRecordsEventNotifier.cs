@@ -1,9 +1,8 @@
-﻿using System.Text.Json;
-using MedicalAppointments.Application.Common;
-using MedicalAppointments.Application.Outbox;
+﻿using MedicalAppointments.Application.Outbox;
 using MedicalAppointments.Domain.Appointments;
 using MedicalAppointments.Domain.ClinicalRecords;
 using MedicalAppointments.Domain.Outbox;
+using System.Text.Json;
 
 namespace MedicalAppointments.Application.ClinicalRecords.Outbox;
 
@@ -52,6 +51,39 @@ public sealed class ClinicalRecordsEventNotifier : IClinicalRecordsEventNotifier
 
         var message = OutboxMessage.Create(
             type: type,
+            payload: serialized,
+            occurredAt: now,
+            createdAt: now);
+
+        _outboxWriter.Enqueue(message);
+    }
+
+    public void EnqueueAttachmentEvent(
+        ClinicalAttachment attachment,
+        Domain.Appointments.Appointment appointment,
+        string changeType,
+        DateTimeOffset now,
+        string? correlationId)
+    {
+        var payload = new ClinicalAttachmentEventPayload(
+            attachment.Id,
+            attachment.NoteId,
+            appointment.Id,
+            appointment.DoctorId,
+            appointment.ClinicId,
+            appointment.PatientId,
+            attachment.FileName,
+            attachment.ContentType,
+            attachment.SizeBytes,
+            attachment.ScanStatus,
+            changeType,
+            now,
+            correlationId);
+
+        var serialized = JsonSerializer.Serialize(payload, _jsonOptions);
+
+        var message = OutboxMessage.Create(
+            type: OutboxTypes.ClinicalAttachmentUploaded,
             payload: serialized,
             occurredAt: now,
             createdAt: now);

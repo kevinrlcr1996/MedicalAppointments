@@ -9,6 +9,8 @@ public class ClinicalRecordsLayerTests
 {
     private static readonly Assembly DomainAssembly = typeof(ClinicalNote).Assembly;
     private static readonly Assembly ApplicationAssembly = typeof(IClinicalRecordsService).Assembly;
+    private static readonly Assembly AttachmentDomainAssembly = typeof(MedicalAppointments.Domain.ClinicalRecords.ClinicalAttachment).Assembly;
+    private static readonly Assembly AttachmentAppAssembly = typeof(MedicalAppointments.Application.ClinicalRecords.IClinicalAttachmentService).Assembly;
 
     [Fact]
     public void Domain_ClinicalRecords_Should_Not_Depend_On_Outer_Layers()

@@ -42,4 +42,29 @@ public sealed class EfClinicalNoteStore : IClinicalNoteStore
             .OrderBy(x => x.CreatedAt)
             .ToListAsync(cancellationToken);
     }
+
+    public async Task<IReadOnlyList<ClinicalNote>> GetHistoryByPatientAsync(
+        Guid patientId,
+        Guid? doctorIdFilter,
+        CancellationToken cancellationToken = default)
+    {
+        var query = _dbContext.ClinicalNotes
+            .AsNoTracking()
+            .Include(x => x.Appointment)
+                .ThenInclude(a => a.Doctor)
+            .Include(x => x.Appointment)
+                .ThenInclude(a => a.Clinic)
+            .Include(x => x.CorrectsNote)
+            .Where(x => x.Appointment.PatientId == patientId);
+
+        if (doctorIdFilter.HasValue)
+        {
+            query = query.Where(x => x.Appointment.DoctorId == doctorIdFilter.Value);
+        }
+
+        return await query
+            .OrderByDescending(x => x.Appointment.StartAt)
+            .ThenBy(x => x.CreatedAt)
+            .ToListAsync(cancellationToken);
+    }
 }

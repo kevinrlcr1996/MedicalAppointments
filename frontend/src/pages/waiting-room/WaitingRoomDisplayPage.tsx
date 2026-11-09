@@ -1,13 +1,13 @@
-import { useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { CalendarDays, Volume2 } from 'lucide-react';
-import { apiClient } from '../../services/api/apiClient';
-import { waitingRoomApi, type PatientCalledPayload, type WaitingRoomBoard } from '../../services/api/waitingRoom';
-import { SignalREvents } from '../../services/realtime/signalrEvents';
-import { notificationSignalRClient } from '../../services/realtime/signalrClient';
+import { Volume2 } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { Spinner } from '../../components/ui/Spinner';
 import { useAuth } from '../../contexts/AuthContext';
 import { hasAnyPermission, Permissions } from '../../lib/permissions';
-import { Spinner } from '../../components/ui/Spinner';
+import { apiClient } from '../../services/api/apiClient';
+import { waitingRoomApi, type PatientCalledPayload, type WaitingRoomBoard } from '../../services/api/waitingRoom';
+import { notificationSignalRClient } from '../../services/realtime/signalrClient';
+import { SignalREvents } from '../../services/realtime/signalrEvents';
 
 interface DoctorClinicRef {
     clinicId: string;
@@ -79,14 +79,14 @@ export function WaitingRoomDisplayPage() {
         return off;
     }, [canView, doctorId, clinicId]);
 
-    function openDatePicker() {
-        const el = dateInputRef.current;
-        if (!el) {
-            return;
-        }
-        const picker = el as HTMLInputElement & { showPicker?: () => void };
-        picker.showPicker?.();
-    }
+    /*     function openDatePicker() {
+            const el = dateInputRef.current;
+            if (!el) {
+                return;
+            }
+            const picker = el as HTMLInputElement & { showPicker?: () => void };
+            picker.showPicker?.();
+        } */
 
     if (!canView) {
         return (

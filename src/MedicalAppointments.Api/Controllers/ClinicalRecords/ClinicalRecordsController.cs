@@ -14,10 +14,12 @@ namespace MedicalAppointments.Api.Controllers.ClinicalRecords;
 public sealed class ClinicalRecordsController : ControllerBase
 {
     private readonly IClinicalRecordsService _service;
+    private readonly IClinicalAttachmentService _attachments;
 
-    public ClinicalRecordsController(IClinicalRecordsService service)
+    public ClinicalRecordsController(IClinicalRecordsService service, IClinicalAttachmentService attachments)
     {
         _service = service;
+        _attachments = attachments;
     }
 
     [HttpGet("appointments/{appointmentId:guid}/notes")]
@@ -78,8 +80,65 @@ public sealed class ClinicalRecordsController : ControllerBase
         return Ok(ToResponse(result));
     }
 
+    [HttpGet("notes/{noteId:guid}/attachments")]
+    [Authorize(Policy = Policies.ClinicalRecordsRead)]
+    public async Task<ActionResult<IReadOnlyList<ClinicalAttachmentResponse>>> ListAttachments(
+    Guid noteId, CancellationToken cancellationToken)
+    {
+        var result = await _attachments.ListByNoteAsync(noteId, cancellationToken);
+        return Ok(result.Select(ToAttachmentResponse).ToList());
+    }
+
+    [HttpPost("notes/{noteId:guid}/attachments")]
+    [Authorize(Policy = Policies.ClinicalRecordsManage)]
+    [RequestSizeLimit(20 * 1024 * 1024)] // techo HTTP; el límite de negocio es Attachments:MaxBytes
+    public async Task<ActionResult<ClinicalAttachmentResponse>> UploadAttachment(
+        Guid noteId,
+        IFormFile file,
+        CancellationToken cancellationToken)
+    {
+        if (file is null || file.Length == 0)
+        {
+            return BadRequest("No file received.");
+        }
+
+        await using var stream = file.OpenReadStream();
+        var command = new UploadClinicalAttachmentCommand(
+            noteId, file.FileName, file.ContentType, file.Length, stream);
+
+        var result = await _attachments.UploadAsync(command, cancellationToken);
+        return Ok(ToAttachmentResponse(result));
+    }
+
+    [HttpGet("attachments/{attachmentId:guid}/download")]
+    [Authorize(Policy = Policies.ClinicalRecordsRead)]
+    public async Task<IActionResult> DownloadAttachment(
+        Guid attachmentId, CancellationToken cancellationToken)
+    {
+        var (content, fileName, contentType) = await _attachments.DownloadAsync(attachmentId, cancellationToken);
+        return File(content, contentType, fileName);
+    }
+
+    [HttpGet("patients/{patientId:guid}/history")]
+    [Authorize(Policy = Policies.ClinicalRecordsRead)]
+    public async Task<ActionResult<IReadOnlyList<ClinicalHistoryItemResponse>>> GetPatientHistory(
+        Guid patientId, CancellationToken cancellationToken)
+    {
+        var result = await _service.GetPatientHistoryAsync(patientId, cancellationToken);
+        return Ok(result.Select(ToHistoryResponse).ToList());
+    }
+
     private static ClinicalNoteResponse ToResponse(ClinicalNoteDto dto) => new(
         dto.Id, dto.AppointmentId, dto.AuthorUserId, dto.AuthorDoctorId, dto.AuthorDisplayName,
         dto.Category, dto.Title, dto.Content, dto.IsFinal, dto.OccurredAtUtc, dto.FinalizedAt,
         dto.FinalizedByUserId, dto.CorrectsNoteId, dto.CorrectsNoteTitle, dto.CreatedAt, dto.UpdatedAt);
+
+    private static ClinicalAttachmentResponse ToAttachmentResponse(ClinicalAttachmentDto dto) => new(
+        dto.Id, dto.NoteId, dto.FileName, dto.ContentType, dto.SizeBytes,
+        dto.ScanStatus, dto.ScannedAt, dto.UploadedByUserId, dto.CreatedAt);
+
+    private static ClinicalHistoryItemResponse ToHistoryResponse(ClinicalHistoryItemDto dto) => new(
+        dto.NoteId, dto.AppointmentId, dto.AppointmentLocalDate, dto.AppointmentStartAtUtc,
+        dto.DoctorFullName, dto.ClinicName, dto.Category, dto.Title, dto.Content, dto.IsFinal,
+        dto.AuthorDisplayName, dto.OccurredAtUtc, dto.FinalizedAt, dto.CorrectsNoteId, dto.AttachmentCount);
 }

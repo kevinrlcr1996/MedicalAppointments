@@ -41,3 +41,20 @@ public sealed record CorrectClinicalNoteCommand(
     string Title,
     string Content,
     DateTimeOffset? OccurredAtUtc);
+
+public sealed record ClinicalHistoryItemDto(
+    Guid NoteId,
+    Guid AppointmentId,
+    DateOnly AppointmentLocalDate,
+    DateTimeOffset AppointmentStartAtUtc,
+    string DoctorFullName,
+    string ClinicName,
+    ClinicalNoteCategory Category,
+    string Title,
+    string Content,
+    bool IsFinal,
+    string AuthorDisplayName,
+    DateTimeOffset OccurredAtUtc,
+    DateTimeOffset? FinalizedAt,
+    Guid? CorrectsNoteId,
+    int AttachmentCount);

@@ -270,6 +270,48 @@ public sealed class ClinicalRecordsService : IClinicalRecordsService
         return Map(correction);
     }
 
+    public async Task<IReadOnlyList<ClinicalHistoryItemDto>> GetPatientHistoryAsync(
+    Guid patientId,
+    CancellationToken cancellationToken = default)
+    {
+        var subject = await _access.GetSubjectAsync(cancellationToken);
+
+        if (!_access.CanReadNotes(subject))
+        {
+            throw new ForbiddenException("You do not have access to clinical records.");
+        }
+
+        // read_assigned: solo notas de citas del propio médico del sujeto. read_all: sin filtro.
+        var doctorIdFilter = subject.CanReadAll ? (Guid?)null : subject.DoctorId;
+
+        var notes = await _store.GetHistoryByPatientAsync(patientId, doctorIdFilter, cancellationToken);
+
+        var result = new List<ClinicalHistoryItemDto>(notes.Count);
+
+        foreach (var note in notes)
+        {
+            var appointment = note.Appointment; // Include en cascada ya trajo la cita
+            result.Add(new ClinicalHistoryItemDto(
+                note.Id,
+                appointment.Id,
+                appointment.LocalDate,
+                appointment.StartAt,
+                appointment.Doctor is null ? string.Empty : $"{appointment.Doctor.FirstName} {appointment.Doctor.LastName}",
+                appointment.Clinic?.Name ?? string.Empty,
+                note.Category,
+                note.Title,
+                note.Content,
+                note.IsFinal,
+                note.AuthorDisplayName,
+                note.OccurredAtUtc,
+                note.FinalizedAt,
+                note.CorrectsNoteId,
+                0)); // attachment count se rellena abajo si hace falta; 8b lo deja en 0 (deuda 8c: badge de adjuntos en timeline)
+        }
+
+        return result;
+    }
+
     private void EnqueueAudit(Guid? userId, string action, Guid entityId, DateTimeOffset now, object? newValues)
     {
         _auditWriter.Enqueue(new AuditEntry(

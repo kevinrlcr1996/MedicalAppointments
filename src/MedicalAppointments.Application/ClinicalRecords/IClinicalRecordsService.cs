@@ -23,4 +23,8 @@ public interface IClinicalRecordsService
     Task<ClinicalNoteDto> CorrectNoteAsync(
         CorrectClinicalNoteCommand command,
         CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<ClinicalHistoryItemDto>> GetPatientHistoryAsync(
+        Guid patientId,
+        CancellationToken cancellationToken = default);
 }

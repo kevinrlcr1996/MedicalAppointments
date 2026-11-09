@@ -52,6 +52,7 @@ public sealed class AppDbContext : DbContext
     public DbSet<WaitingRoomCall> WaitingRoomCalls => Set<WaitingRoomCall>();
 
     public DbSet<ClinicalNote> ClinicalNotes => Set<ClinicalNote>();
+    public DbSet<ClinicalAttachment> ClinicalAttachments => Set<ClinicalAttachment>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

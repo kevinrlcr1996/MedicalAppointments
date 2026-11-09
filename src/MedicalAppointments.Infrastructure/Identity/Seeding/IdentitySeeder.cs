@@ -192,6 +192,7 @@ public sealed class IdentitySeeder
             Permissions.ClinicalRecordsUpdate,
             Permissions.ClinicalRecordsFinalize,
             Permissions.ClinicalRecordsCorrect,
+            Permissions.DoctorsRead,
         }, now, cancellationToken);
 
         await GrantAsync(Roles.Receptionist, new[]

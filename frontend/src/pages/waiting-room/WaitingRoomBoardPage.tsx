@@ -1,4 +1,3 @@
-import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
     CheckCheck,
@@ -9,14 +8,7 @@ import {
     Stethoscope,
     UserCheck,
 } from 'lucide-react';
-import { apiClient, ApiError } from '../../services/api/apiClient';
-import { crudApi } from '../../services/api/crudApi';
-import { appointmentsApi, type Appointment } from '../../services/api/appointments';
-import { waitingRoomApi, type WaitingRoomBoard, type WaitingRoomCard } from '../../services/api/waitingRoom';
-import { useAuth } from '../../contexts/AuthContext';
-import { hasAnyPermission, Permissions } from '../../lib/permissions';
-import { useWaitingRoomRealtime } from '../../hooks/useWaitingRoomRealtime';
-import { formatDateTime } from '../../utils/formatDate';
+import { useMemo, useState } from 'react';
 import { Alert } from '../../components/ui/Alert';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
@@ -27,6 +19,14 @@ import { Input } from '../../components/ui/Input';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { Select } from '../../components/ui/Select';
 import { Spinner } from '../../components/ui/Spinner';
+import { useAuth } from '../../contexts/AuthContext';
+import { useWaitingRoomRealtime } from '../../hooks/useWaitingRoomRealtime';
+import { hasAnyPermission, Permissions } from '../../lib/permissions';
+import { apiClient, ApiError } from '../../services/api/apiClient';
+import { appointmentsApi, type Appointment } from '../../services/api/appointments';
+import { crudApi } from '../../services/api/crudApi';
+import { waitingRoomApi, type WaitingRoomCard } from '../../services/api/waitingRoom';
+import { formatDateTime } from '../../utils/formatDate';
 
 interface DoctorClinicRef {
     clinicId: string;

@@ -1,5 +1,6 @@
 ﻿using MedicalAppointments.Application.Appointments;
 using MedicalAppointments.Application.Auth;
+using MedicalAppointments.Application.ClinicalRecords.Storage;
 using MedicalAppointments.Application.ClinicalRecords.Stores;
 using MedicalAppointments.Application.Common;
 using MedicalAppointments.Application.Common.Audit;
@@ -27,6 +28,7 @@ using MedicalAppointments.Infrastructure.Auditing;
 using MedicalAppointments.Infrastructure.Auth;
 using MedicalAppointments.Infrastructure.BackgroundServices;
 using MedicalAppointments.Infrastructure.ClinicalRecords.Persistence;
+using MedicalAppointments.Infrastructure.ClinicalRecords.Storage;
 using MedicalAppointments.Infrastructure.Idempotency.Persistence;
 using MedicalAppointments.Infrastructure.Identity.Email;
 using MedicalAppointments.Infrastructure.Identity.Persistence;
@@ -130,6 +132,11 @@ public static class InfrastructureDependencyInjection
         services.AddScoped<IWaitingRoomCallStore, EfWaitingRoomCallStore>();
 
         services.AddScoped<IClinicalNoteStore, EfClinicalNoteStore>();
+
+        services.AddScoped<IClinicalAttachmentStore, EfClinicalAttachmentStore>();
+        services.AddSingleton<IFileStorage, LocalDiskFileStorage>();
+        services.AddSingleton<IFileScanner, ClamAvFileScanner>();
+        services.Configure<AttachmentsOptions>(configuration.GetSection(AttachmentsOptions.SectionName));
 
         ConfigureNotifications(services, configuration);
 

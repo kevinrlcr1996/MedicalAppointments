@@ -22,4 +22,5 @@ public static class OutboxTypes
     public const string ClinicalNoteCreated = "ClinicalRecords.NoteCreated";
     public const string ClinicalNoteUpdated = "ClinicalRecords.NoteUpdated";
     public const string ClinicalNoteFinalized = "ClinicalRecords.NoteFinalized";
+    public const string ClinicalAttachmentUploaded = "ClinicalRecords.AttachmentUploaded";
 }

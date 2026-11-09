@@ -13,4 +13,9 @@ public interface IClinicalNoteStore
     Task<IReadOnlyList<ClinicalNote>> GetByAppointmentAsync(
         Guid appointmentId,
         CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<ClinicalNote>> GetHistoryByPatientAsync(
+        Guid patientId,
+        Guid? doctorIdFilter,
+        CancellationToken cancellationToken = default);
 }

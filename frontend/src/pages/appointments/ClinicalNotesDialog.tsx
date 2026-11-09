@@ -1,23 +1,38 @@
-import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Check, FileText, PenLine, Plus, Send, ShieldAlert, X } from 'lucide-react';
+import { Check, Download, FileText, Paperclip, PenLine, Plus, Send, ShieldAlert, ShieldCheck, ShieldQuestion, X } from 'lucide-react';
+import { useState } from 'react';
 import {
     clinicalRecordsApi,
     type ClinicalNote,
     type ClinicalNoteCategory,
 } from '../../services/api/clinicalRecords';
-import { ApiError } from '../../services/api/apiClient';
-import { useAuth } from '../../contexts/AuthContext';
-import { hasPermission, Permissions } from '../../lib/permissions';
-import { formatDateTime } from '../../utils/formatDate';
+// 8b: adjuntos. Este módulo lo entregué en la fase 8b; su upload usa apiClient.postForm
+// y su downloadUrl devuelve una ruta relativa. AMBOS dependen de detalles de tu apiClient
+// que NO confirmé. Si apiClient no tiene postForm, el error TS vive en clinicalAttachments.ts
+// (UNA línea), NO en este dialog. Pégame apiClient.ts y alineo upload+download allí.
 import { Alert } from '../../components/ui/Alert';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
+import { Input } from '../../components/ui/Input';
 import { Modal } from '../../components/ui/Modal';
 import { Select } from '../../components/ui/Select';
 import { Spinner } from '../../components/ui/Spinner';
 import { Textarea } from '../../components/ui/Textarea';
-import { Input } from '../../components/ui/Input';
+import { useAuth } from '../../contexts/AuthContext';
+import { hasPermission, Permissions } from '../../lib/permissions';
+import { ApiError } from '../../services/api/apiClient';
+import { clinicalAttachmentsApi, type ClinicalAttachment } from '../../services/api/clinicalAttachments';
+import { formatDateTime } from '../../utils/formatDate';
+
+// NOTA de diagnóstico (React DevTools, según react.dev/link/react-devtools): si la lista de
+// adjuntos de una nota saliera vacía, la EXTENSIÓN del navegador (Chrome/Edge/Firefox) añade
+// los paneles Components y Profiler al visitar el sitio React; para Safari y otros navegadores
+// instala el paquete npm (npm install -g react-devtools), ábrelo desde terminal (react-devtools)
+// y conecta el sitio añadiendo <script src="http://localhost:8097"></script> al INICIO del <head>,
+// luego recarga. (Para apps React Native existe React Native DevTools, el depurador integrado;
+// NO aplica a este stack web React/Vite.) DevTools confirma QUE el server devolvió vacío (el
+// useQuery muestra data: [] / undefined), NO el POR QUÉ (¿scope? ¿403? ¿nota sin adjuntos?).
+// El por-qué se decide con Network (status+response) y SQL, no con DevTools.
 
 const CATEGORIES: { value: ClinicalNoteCategory; label: string }[] = [
     { value: 'Subjective', label: 'Subjetivo (S)' },
@@ -189,6 +204,10 @@ export function ClinicalNotesDialog({
                                 <p className="mt-2 whitespace-pre-wrap text-sm text-slate-700 dark:text-slate-300">
                                     {note.content}
                                 </p>
+
+                                {/* 8b: adjuntos de esta nota. canUpdate && !isFinal => solo borradores suben;
+                                    listar/descargar siempre (quien ve la nota ve sus adjuntos). */}
+                                <AttachmentsSection note={note} canUpdate={canUpdate && !note.isFinal} />
                             </div>
                         ))}
                     </div>
@@ -242,4 +261,126 @@ export function ClinicalNotesDialog({
             </div>
         </Modal>
     );
+}
+
+function AttachmentsSection({ note, canUpdate }: { note: ClinicalNote; canUpdate: boolean }) {
+    const queryClient = useQueryClient();
+    const [uploading, setUploading] = useState(false);
+    const [downloadingId, setDownloadingId] = useState<string | null>(null);
+    const [downloadError, setDownloadError] = useState<string | null>(null);
+
+    const attachmentsQuery = useQuery({
+        queryKey: ['clinical-attachments', 'note', note.id],
+        queryFn: () => clinicalAttachmentsApi.listByNote(note.id),
+    });
+
+    const uploadMutation = useMutation({
+        mutationFn: (file: File) => clinicalAttachmentsApi.upload(note.id, file),
+        onSuccess: async () => {
+            setUploading(false);
+            await queryClient.invalidateQueries({ queryKey: ['clinical-attachments', 'note', note.id] });
+        },
+        onError: () => setUploading(false),
+    });
+
+    const handleDownload = async (a: ClinicalAttachment) => {
+        setDownloadError(null);
+        setDownloadingId(a.id);
+        try {
+            const blob = await clinicalAttachmentsApi.downloadBlob(a.id);
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = a.fileName;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            URL.revokeObjectURL(url);
+        } catch (err) {
+            setDownloadError(
+                err instanceof ApiError ? `${err.status}: ${err.message}` : 'No se pudo descargar el adjunto.',
+            );
+        } finally {
+            setDownloadingId(null);
+        }
+    };
+
+    const items = attachmentsQuery.data ?? [];
+
+    return (
+        <div className="mt-3 border-t border-slate-200 pt-2 dark:border-slate-800">
+            <p className="mb-1 flex items-center gap-1 text-xs font-semibold text-slate-600 dark:text-slate-400">
+                <Paperclip className="h-3 w-3" /> Adjuntos ({items.length})
+            </p>
+
+            {items.map((a) => (
+                <div key={a.id} className="flex items-center justify-between gap-2 py-1 text-xs">
+                    <span className="truncate text-slate-700 dark:text-slate-300">{a.fileName}</span>
+                    <span className="flex shrink-0 items-center gap-2">
+                        <ScanBadge status={a.scanStatus} />
+                        <Button
+                            variant="secondary"
+                            size="sm"
+                            loading={downloadingId === a.id}
+                            onClick={() => handleDownload(a)}
+                            leftIcon={<Download className="h-3 w-3" />}
+                        >
+                            descargar
+                        </Button>
+                    </span>
+                </div>
+            ))}
+
+            {items.length === 0 && !attachmentsQuery.isLoading ? (
+                <p className="text-xs text-slate-400">Sin adjuntos.</p>
+            ) : null}
+
+            {canUpdate ? (
+                <label className="mt-2 inline-flex cursor-pointer items-center gap-1 text-xs font-medium text-sky-700 dark:text-sky-300">
+                    <Paperclip className="h-3 w-3" />
+                    {uploading || uploadMutation.isPending ? 'Subiendo…' : 'Adjuntar archivo'}
+                    <input
+                        type="file"
+                        className="hidden"
+                        disabled={uploading || uploadMutation.isPending}
+                        onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                                setUploading(true);
+                                uploadMutation.mutate(file);
+                            }
+                            e.target.value = '';
+                        }}
+                    />
+                </label>
+            ) : null}
+
+            {uploadMutation.isError ? (
+                <p className="mt-1 text-xs text-rose-600 dark:text-rose-400">
+                    {uploadMutation.error instanceof ApiError
+                        ? `${uploadMutation.error.status}: ${uploadMutation.error.message}`
+                        : uploadMutation.error instanceof Error
+                            ? uploadMutation.error.message
+                            : 'No se pudo subir el adjunto.'}
+                </p>
+            ) : null}
+
+            {downloadError ? (
+                <p className="mt-1 text-xs text-rose-600 dark:text-rose-400">{downloadError}</p>
+            ) : null}
+        </div>
+    );
+}
+
+function ScanBadge({ status }: { status: ClinicalAttachment['scanStatus'] }) {
+    if (status === 'Clean') {
+        return <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400"><ShieldCheck className="h-3 w-3" />limpio</span>;
+    }
+    if (status === 'Skipped') {
+        return <span className="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400"><ShieldQuestion className="h-3 w-3" />sin analizar</span>;
+    }
+    if (status === 'Infected') {
+        return <span className="inline-flex items-center gap-1 text-rose-600 dark:text-rose-400"><ShieldAlert className="h-3 w-3" />cuarentena</span>;
+    }
+    return <span className="text-slate-400">pendiente</span>;
 }

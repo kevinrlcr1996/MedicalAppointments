@@ -115,6 +115,9 @@ public static class ApplicationDependencyInjection
 
         services.AddScoped<IValidator<CreateUserCommand>, CreateUserCommandValidator>();
 
+        services.AddScoped<IClinicalAttachmentService, ClinicalAttachmentService>();
+        services.AddScoped<IOutboxHandler, ClinicalAttachmentUploadedOutboxHandler>();
+
         return services;
     }
 }
