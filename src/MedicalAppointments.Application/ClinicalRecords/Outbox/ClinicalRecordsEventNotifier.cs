@@ -72,8 +72,6 @@ public sealed class ClinicalRecordsEventNotifier : IClinicalRecordsEventNotifier
             appointment.DoctorId,
             appointment.ClinicId,
             appointment.PatientId,
-            attachment.FileName,
-            attachment.ContentType,
             attachment.SizeBytes,
             attachment.ScanStatus,
             changeType,

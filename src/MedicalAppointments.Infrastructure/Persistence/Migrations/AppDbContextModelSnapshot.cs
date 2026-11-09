@@ -181,10 +181,21 @@ namespace MedicalAppointments.Infrastructure.Persistence.Migrations
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("datetimeoffset");
 
+                    b.Property<DateTimeOffset?>("DeletedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid?>("DeletedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("FileName")
                         .IsRequired()
                         .HasMaxLength(300)
                         .HasColumnType("nvarchar(300)");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
 
                     b.Property<Guid>("NoteId")
                         .HasColumnType("uniqueidentifier");
@@ -232,6 +243,9 @@ namespace MedicalAppointments.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("Sha256Hex")
                         .HasDatabaseName("IX_ClinicalAttachments_Sha256");
+
+                    b.HasIndex("NoteId", "IsDeleted")
+                        .HasDatabaseName("IX_ClinicalAttachments_NoteId_IsDeleted");
 
                     b.ToTable("ClinicalAttachments", (string)null);
                 });

@@ -9,4 +9,6 @@ public interface IClinicalAttachmentService
     Task<ClinicalAttachmentDto> UploadAsync(UploadClinicalAttachmentCommand command, CancellationToken cancellationToken = default);
 
     Task<(Stream Content, string FileName, string ContentType)> DownloadAsync(Guid attachmentId, CancellationToken cancellationToken = default);
+
+    Task DeleteAsync(Guid attachmentId, CancellationToken cancellationToken = default);
 }

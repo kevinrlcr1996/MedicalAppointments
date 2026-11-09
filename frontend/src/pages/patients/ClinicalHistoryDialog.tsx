@@ -71,6 +71,9 @@ export function ClinicalHistoryDialog({
                                 <Badge variant="info">{item.category}</Badge>
                                 {item.isFinal ? <Badge variant="success">Firmada</Badge> : <Badge variant="warning">Borrador</Badge>}
                                 {item.correctsNoteId ? <Badge variant="danger">Corrección</Badge> : null}
+                                {item.attachmentCount > 0 ? (
+                                    <Badge variant="neutral">📎 {item.attachmentCount}</Badge>
+                                ) : null}
                             </div>
                             <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-50">{item.title}</p>
                             <p className="mt-1 whitespace-pre-wrap text-sm text-slate-700 dark:text-slate-300">{item.content}</p>

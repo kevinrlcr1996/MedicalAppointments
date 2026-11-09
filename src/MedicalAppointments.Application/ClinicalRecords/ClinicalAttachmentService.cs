@@ -200,6 +200,58 @@ public sealed class ClinicalAttachmentService : IClinicalAttachmentService
         return (stream, attachment.FileName, attachment.ContentType);
     }
 
+    public async Task DeleteAsync(Guid attachmentId, CancellationToken cancellationToken = default)
+    {
+        var now = _timeProvider.GetUtcNow();
+        var subject = await _access.GetSubjectAsync(cancellationToken);
+
+        var attachment = await _store.GetTrackedByIdAsync(attachmentId, cancellationToken)
+            ?? throw new NotFoundException("Attachment not found.");
+
+        var note = await _noteStore.GetTrackedByIdAsync(attachment.NoteId, cancellationToken)
+            ?? throw new NotFoundException("Clinical note not found.");
+
+        var appointment = await _appointmentStore.GetTrackedByIdAsync(note.AppointmentId, cancellationToken)
+            ?? throw new NotFoundException("Appointment not found.");
+
+        // Quitar adjunto == editar el borrador: reuso CanUpdateNote (8b). Solo borradores.
+        if (note.IsFinal)
+        {
+            throw new ConflictException("Attachments on a finalized note are sealed and cannot be removed.");
+        }
+
+        if (!_access.CanUpdateNote(note, subject))
+        {
+            throw new ForbiddenException("You do not have permission to remove this attachment.");
+        }
+
+        if (!subject.UserId.HasValue)
+        {
+            throw new ConflictException("An authenticated user is required to remove an attachment.");
+        }
+
+        // Idempotente: si ya está borrado, SoftDelete es no-op y NO re-audito ni re-publica.
+        if (attachment.IsDeleted)
+        {
+            return;
+        }
+
+        attachment.SoftDelete(subject.UserId.Value, now);
+
+        // Auditoría SANITIZADA: loggeo extensión + size + hash, NUNCA el nombre original (filtra contexto).
+        var ext = Path.GetExtension(attachment.FileName);
+        EnqueueAudit(subject.UserId, "ClinicalRecords.AttachmentDeleted", attachment.Id, now,
+            new { noteId = note.Id, extension = ext, sizeBytes = attachment.SizeBytes, sha256 = attachment.Sha256Hex });
+
+        // Evento realtime metadata-only, SIN fileName (el cliente lo re-obtiene vía listByNote autorizado).
+        _notifier.EnqueueAttachmentEvent(attachment, appointment, "Deleted", now, _correlationIdProvider.CorrelationId);
+
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        // NOTA: el archivo FÍSICO NO se borra aquí (trazabilidad + posible recuperación/auditoría).
+        // La limpieza física de soft-deleted es deuda de background cleanup (ver Technical Debt 8c).
+    }
+
     private async Task<(ClinicalNote Note, Domain.Appointments.Appointment Appointment)> LoadNoteAndAppointmentAsync(
         Guid noteId,
         CancellationToken cancellationToken)

@@ -10,6 +10,7 @@ using MedicalAppointments.Application.Common.Exceptions;
 using MedicalAppointments.Application.MedicalStructure.Doctors;
 using MedicalAppointments.Domain.Appointments;
 using MedicalAppointments.Domain.ClinicalRecords;
+using System.Net.Mail;
 
 namespace MedicalAppointments.Application.ClinicalRecords;
 
@@ -23,6 +24,7 @@ public sealed class ClinicalRecordsService : IClinicalRecordsService
     private readonly IClinicalNoteStore _store;
     private readonly IAppointmentStore _appointmentStore;
     private readonly IDoctorStore _doctorStore;
+    private readonly IClinicalAttachmentStore _attachments;
 
     private readonly IUnitOfWork _unitOfWork;
     private readonly IClinicalRecordsEventNotifier _notifier;
@@ -39,6 +41,7 @@ public sealed class ClinicalRecordsService : IClinicalRecordsService
         IClinicalNoteStore store,
         IAppointmentStore appointmentStore,
         IDoctorStore doctorStore,
+        IClinicalAttachmentStore attachments,
         IUnitOfWork unitOfWork,
         IClinicalRecordsEventNotifier notifier,
         IAuditWriter auditWriter,
@@ -53,6 +56,7 @@ public sealed class ClinicalRecordsService : IClinicalRecordsService
         _store = store;
         _appointmentStore = appointmentStore;
         _doctorStore = doctorStore;
+        _attachments = attachments;
         _unitOfWork = unitOfWork;
         _notifier = notifier;
         _auditWriter = auditWriter;
@@ -286,27 +290,21 @@ public sealed class ClinicalRecordsService : IClinicalRecordsService
 
         var notes = await _store.GetHistoryByPatientAsync(patientId, doctorIdFilter, cancellationToken);
 
-        var result = new List<ClinicalHistoryItemDto>(notes.Count);
+        // Conteo de adjuntos NO-borrados por nota (query separada; la nota no navega a adjuntos, rule 6).
+        var noteIds = notes.Select(n => n.Id).ToList();
+        var counts = await _attachments.GetCountsByNoteIdsAsync(noteIds, cancellationToken);
 
+        var result = new List<ClinicalHistoryItemDto>(notes.Count);
         foreach (var note in notes)
         {
-            var appointment = note.Appointment; // Include en cascada ya trajo la cita
+            var appointment = note.Appointment;
             result.Add(new ClinicalHistoryItemDto(
-                note.Id,
-                appointment.Id,
-                appointment.LocalDate,
-                appointment.StartAt,
+                note.Id, appointment.Id, appointment.LocalDate, appointment.StartAt,
                 appointment.Doctor is null ? string.Empty : $"{appointment.Doctor.FirstName} {appointment.Doctor.LastName}",
                 appointment.Clinic?.Name ?? string.Empty,
-                note.Category,
-                note.Title,
-                note.Content,
-                note.IsFinal,
-                note.AuthorDisplayName,
-                note.OccurredAtUtc,
-                note.FinalizedAt,
-                note.CorrectsNoteId,
-                0)); // attachment count se rellena abajo si hace falta; 8b lo deja en 0 (deuda 8c: badge de adjuntos en timeline)
+                note.Category, note.Title, note.Content, note.IsFinal, note.AuthorDisplayName,
+                note.OccurredAtUtc, note.FinalizedAt, note.CorrectsNoteId,
+                counts.TryGetValue(note.Id, out var c) ? c : 0)); // 8c: conteo real, ya no 0 fijo
         }
 
         return result;

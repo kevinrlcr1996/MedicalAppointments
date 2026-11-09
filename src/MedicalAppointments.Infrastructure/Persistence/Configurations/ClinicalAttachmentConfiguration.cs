@@ -17,6 +17,10 @@ public sealed class ClinicalAttachmentConfiguration : AggregateRootConfiguration
         builder.Property(x => x.Sha256Hex).HasMaxLength(64).IsRequired();
         builder.Property(x => x.ScanStatus).HasConversion<string>().HasMaxLength(20).IsRequired();
 
+        builder.Property(x => x.IsDeleted).IsRequired().HasDefaultValue(false);
+        builder.Property(x => x.DeletedAt).IsRequired(false);
+        builder.Property(x => x.DeletedByUserId).IsRequired(false);
+
         // Direccionalidad: el adjunto conoce la nota; la nota NO navega a adjuntos (no se toca ClinicalNote de Fase 8).
         builder.HasOne(x => x.Note)
             .WithMany()
@@ -26,5 +30,7 @@ public sealed class ClinicalAttachmentConfiguration : AggregateRootConfiguration
         builder.HasIndex(x => x.NoteId).HasDatabaseName("IX_ClinicalAttachments_NoteId");
         builder.HasIndex(x => x.ScanStatus).HasDatabaseName("IX_ClinicalAttachments_ScanStatus");
         builder.HasIndex(x => x.Sha256Hex).HasDatabaseName("IX_ClinicalAttachments_Sha256");
+        // Índice parcial para que las listas/conteos filtren borrados rápido:
+        builder.HasIndex(x => new { x.NoteId, x.IsDeleted }).HasDatabaseName("IX_ClinicalAttachments_NoteId_IsDeleted");
     }
 }

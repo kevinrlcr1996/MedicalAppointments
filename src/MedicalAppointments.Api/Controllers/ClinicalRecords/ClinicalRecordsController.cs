@@ -128,6 +128,15 @@ public sealed class ClinicalRecordsController : ControllerBase
         return Ok(result.Select(ToHistoryResponse).ToList());
     }
 
+    [HttpDelete("attachments/{attachmentId:guid}")]
+    [Authorize(Policy = Policies.ClinicalRecordsManage)]
+    public async Task<IActionResult> DeleteAttachment(
+    Guid attachmentId, CancellationToken cancellationToken)
+    {
+        await _attachments.DeleteAsync(attachmentId, cancellationToken);
+        return NoContent();
+    }
+
     private static ClinicalNoteResponse ToResponse(ClinicalNoteDto dto) => new(
         dto.Id, dto.AppointmentId, dto.AuthorUserId, dto.AuthorDoctorId, dto.AuthorDisplayName,
         dto.Category, dto.Title, dto.Content, dto.IsFinal, dto.OccurredAtUtc, dto.FinalizedAt,

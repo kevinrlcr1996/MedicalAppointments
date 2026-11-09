@@ -9,4 +9,6 @@ public interface IClinicalAttachmentStore
     Task<ClinicalAttachment?> GetTrackedByIdAsync(Guid id, CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<ClinicalAttachment>> GetByNoteAsync(Guid noteId, CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyDictionary<Guid, int>> GetCountsByNoteIdsAsync(IEnumerable<Guid> noteIds, CancellationToken cancellationToken = default);
 }

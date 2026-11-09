@@ -28,6 +28,10 @@ public sealed class ClinicalAttachment : AggregateRoot
 
     public ClinicalNote Note { get; private set; } = null!;
 
+    public bool IsDeleted { get; private set; }
+    public DateTimeOffset? DeletedAt { get; private set; }
+    public Guid? DeletedByUserId { get; private set; }
+
     public static ClinicalAttachment Create(
         Guid noteId,
         string fileName,
@@ -92,6 +96,21 @@ public sealed class ClinicalAttachment : AggregateRoot
         };
     }
 
-    // Inmutable: no hay Update/Delete. El scan se fija en Create (Clean/Skipped);
-    // Infected nunca persiste (se rechaza en el upload con rollback + 409 + auditoría).
+    public void SoftDelete(Guid deletedByUserId, DateTimeOffset now)
+    {
+        if (IsDeleted)
+        {
+            return; // ya borrado: no-op idempotente
+        }
+
+        if (deletedByUserId == Guid.Empty)
+        {
+            throw new DomainException("Deleting user is required.");
+        }
+
+        IsDeleted = true;
+        DeletedAt = now;
+        DeletedByUserId = deletedByUserId;
+        Touch(now);
+    }
 }

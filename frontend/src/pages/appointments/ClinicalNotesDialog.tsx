@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Check, Download, FileText, Paperclip, PenLine, Plus, Send, ShieldAlert, ShieldCheck, ShieldQuestion, X } from 'lucide-react';
+import { Check, Download, FileText, Paperclip, PenLine, Plus, Send, ShieldAlert, ShieldCheck, ShieldQuestion, Trash, X } from 'lucide-react';
 import { useState } from 'react';
 import {
     clinicalRecordsApi,
@@ -267,6 +267,7 @@ function AttachmentsSection({ note, canUpdate }: { note: ClinicalNote; canUpdate
     const queryClient = useQueryClient();
     const [uploading, setUploading] = useState(false);
     const [downloadingId, setDownloadingId] = useState<string | null>(null);
+    const [deletingId, setDeletingId] = useState<string | null>(null);
     const [downloadError, setDownloadError] = useState<string | null>(null);
 
     const attachmentsQuery = useQuery({
@@ -274,13 +275,20 @@ function AttachmentsSection({ note, canUpdate }: { note: ClinicalNote; canUpdate
         queryFn: () => clinicalAttachmentsApi.listByNote(note.id),
     });
 
+    const invalidateAttachments = async () => {
+        await queryClient.invalidateQueries({ queryKey: ['clinical-attachments', 'note', note.id] });
+    };
+
     const uploadMutation = useMutation({
         mutationFn: (file: File) => clinicalAttachmentsApi.upload(note.id, file),
-        onSuccess: async () => {
-            setUploading(false);
-            await queryClient.invalidateQueries({ queryKey: ['clinical-attachments', 'note', note.id] });
-        },
+        onSuccess: async () => { setUploading(false); await invalidateAttachments(); },
         onError: () => setUploading(false),
+    });
+
+    const deleteMutation = useMutation({
+        mutationFn: (id: string) => clinicalAttachmentsApi.remove(id),
+        onSuccess: async () => { setDeletingId(null); await invalidateAttachments(); },
+        onError: () => setDeletingId(null),
     });
 
     const handleDownload = async (a: ClinicalAttachment) => {
@@ -297,12 +305,15 @@ function AttachmentsSection({ note, canUpdate }: { note: ClinicalNote; canUpdate
             link.remove();
             URL.revokeObjectURL(url);
         } catch (err) {
-            setDownloadError(
-                err instanceof ApiError ? `${err.status}: ${err.message}` : 'No se pudo descargar el adjunto.',
-            );
+            setDownloadError(err instanceof ApiError ? `${err.status}: ${err.message}` : 'No se pudo descargar el adjunto.');
         } finally {
             setDownloadingId(null);
         }
+    };
+
+    const handleDelete = (a: ClinicalAttachment) => {
+        setDeletingId(a.id);
+        deleteMutation.mutate(a.id);
     };
 
     const items = attachmentsQuery.data ?? [];
@@ -318,15 +329,16 @@ function AttachmentsSection({ note, canUpdate }: { note: ClinicalNote; canUpdate
                     <span className="truncate text-slate-700 dark:text-slate-300">{a.fileName}</span>
                     <span className="flex shrink-0 items-center gap-2">
                         <ScanBadge status={a.scanStatus} />
-                        <Button
-                            variant="secondary"
-                            size="sm"
-                            loading={downloadingId === a.id}
-                            onClick={() => handleDownload(a)}
-                            leftIcon={<Download className="h-3 w-3" />}
-                        >
+                        <Button variant="secondary" size="sm" loading={downloadingId === a.id}
+                            onClick={() => handleDownload(a)} leftIcon={<Download className="h-3 w-3" />}>
                             descargar
                         </Button>
+                        {canUpdate ? (
+                            <Button variant="secondary" size="sm" loading={deletingId === a.id}
+                                onClick={() => handleDelete(a)} leftIcon={<Trash className="h-3 w-3" />}>
+                                quitar
+                            </Button>
+                        ) : null}
                     </span>
                 </div>
             ))}
@@ -339,32 +351,25 @@ function AttachmentsSection({ note, canUpdate }: { note: ClinicalNote; canUpdate
                 <label className="mt-2 inline-flex cursor-pointer items-center gap-1 text-xs font-medium text-sky-700 dark:text-sky-300">
                     <Paperclip className="h-3 w-3" />
                     {uploading || uploadMutation.isPending ? 'Subiendo…' : 'Adjuntar archivo'}
-                    <input
-                        type="file"
-                        className="hidden"
-                        disabled={uploading || uploadMutation.isPending}
+                    <input type="file" className="hidden" disabled={uploading || uploadMutation.isPending}
                         onChange={(e) => {
                             const file = e.target.files?.[0];
-                            if (file) {
-                                setUploading(true);
-                                uploadMutation.mutate(file);
-                            }
+                            if (file) { setUploading(true); uploadMutation.mutate(file); }
                             e.target.value = '';
-                        }}
-                    />
+                        }} />
                 </label>
             ) : null}
 
             {uploadMutation.isError ? (
                 <p className="mt-1 text-xs text-rose-600 dark:text-rose-400">
-                    {uploadMutation.error instanceof ApiError
-                        ? `${uploadMutation.error.status}: ${uploadMutation.error.message}`
-                        : uploadMutation.error instanceof Error
-                            ? uploadMutation.error.message
-                            : 'No se pudo subir el adjunto.'}
+                    {uploadMutation.error instanceof ApiError ? `${uploadMutation.error.status}: ${uploadMutation.error.message}` : 'No se pudo subir el adjunto.'}
                 </p>
             ) : null}
-
+            {deleteMutation.isError ? (
+                <p className="mt-1 text-xs text-rose-600 dark:text-rose-400">
+                    {deleteMutation.error instanceof ApiError ? `${deleteMutation.error.status}: ${deleteMutation.error.message}` : 'No se pudo quitar el adjunto.'}
+                </p>
+            ) : null}
             {downloadError ? (
                 <p className="mt-1 text-xs text-rose-600 dark:text-rose-400">{downloadError}</p>
             ) : null}

@@ -37,4 +37,8 @@ export const clinicalAttachmentsApi = {
     downloadBlob(attachmentId: string): Promise<Blob> {
         return apiClient.downloadBlob(`/api/v1/clinical-records/attachments/${attachmentId}/download`);
     },
+
+    remove(attachmentId: string): Promise<void> {
+        return apiClient.delete<void>(`/api/v1/clinical-records/attachments/${attachmentId}`);
+    },
 };
