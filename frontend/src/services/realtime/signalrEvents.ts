@@ -11,6 +11,7 @@ export const SignalREvents = {
   WaitingRoomUpdated: 'WaitingRoomUpdated',
   PatientCalled: 'PatientCalled',
   PatientRecalled: 'PatientRecalled',
+  ClinicalNoteUpdated: 'ClinicalNoteUpdated',
 } as const;
 
 export const SignalRGroups = {

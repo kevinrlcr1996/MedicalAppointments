@@ -1,4 +1,5 @@
-﻿using MedicalAppointments.Application.Auth;
+﻿using FluentValidation;
+using MedicalAppointments.Application.Auth;
 using MedicalAppointments.Application.Common;
 using MedicalAppointments.Application.Common.Exceptions;
 using MedicalAppointments.Contracts.Common;
@@ -13,6 +14,7 @@ public sealed class UserAdminService : IUserAdminService
     private readonly IUserStore _userStore;
     private readonly IPasswordHasher _passwordHasher;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IValidator<CreateUserCommand> _createValidator;
     private readonly TimeProvider _timeProvider;
     private readonly AuthOptions _options;
 
@@ -20,12 +22,14 @@ public sealed class UserAdminService : IUserAdminService
         IUserStore userStore,
         IPasswordHasher passwordHasher,
         IUnitOfWork unitOfWork,
+        IValidator<CreateUserCommand> createValidator,
         TimeProvider timeProvider,
         IOptions<AuthOptions> optionsAccessor)
     {
         _userStore = userStore;
         _passwordHasher = passwordHasher;
         _unitOfWork = unitOfWork;
+        _createValidator = createValidator;
         _timeProvider = timeProvider;
         _options = optionsAccessor.Value;
     }
@@ -47,10 +51,10 @@ public sealed class UserAdminService : IUserAdminService
         throw new NotImplementedException();
     }
 
-    public async Task<UserResponse> CreateAsync(
-        CreateUserCommand command,
-        CancellationToken cancellationToken = default)
+    public async Task<UserResponse> CreateAsync(CreateUserCommand command, CancellationToken cancellationToken = default)
     {
+        await _createValidator.ValidateAndThrowAsync(command, cancellationToken);
+
         var now = _timeProvider.GetUtcNow();
         var normalizedEmail = EmailNormalizer.Normalize(command.Email);
 
@@ -59,8 +63,10 @@ public sealed class UserAdminService : IUserAdminService
             throw new ConflictException("A user with this email already exists.");
         }
 
+        var roleIds = await ResolveRoleIdsAsync(command.Roles, cancellationToken);
         var passwordHash = _passwordHasher.Hash(command.Password);
 
+        // Cuentas creadas por administración nacen confirmadas (sin round-trip de email).
         var user = User.Create(
             email: command.Email,
             normalizedEmail: normalizedEmail,
@@ -70,17 +76,17 @@ public sealed class UserAdminService : IUserAdminService
             isEmailConfirmed: true,
             now: now);
 
+        foreach (var roleId in roleIds.Values)
+        {
+            user.AssignRole(roleId, now);
+        }
+
         await _userStore.AddAsync(user, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return new UserResponse(
-            user.Id,
-            user.Email,
-            user.FirstName,
-            user.LastName,
-            user.IsEmailConfirmed,
-            user.LockoutEnd,
-            command.Roles);
+            user.Id, user.Email, user.FirstName, user.LastName,
+            user.IsEmailConfirmed, user.LockoutEnd, command.Roles);
     }
 
     public Task<UserResponse> AssignRolesAsync(
@@ -89,6 +95,32 @@ public sealed class UserAdminService : IUserAdminService
         CancellationToken cancellationToken = default)
     {
         throw new NotImplementedException();
+    }
+
+    private async Task<IReadOnlyDictionary<string, Guid>> ResolveRoleIdsAsync(
+    IEnumerable<string> roleNames,
+    CancellationToken cancellationToken)
+    {
+        var names = (roleNames ?? Array.Empty<string>())
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Select(x => x.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+        if (names.Length == 0)
+        {
+            return new Dictionary<string, Guid>();
+        }
+
+        var map = await _userStore.GetRoleIdsByNamesAsync(names, cancellationToken);
+
+        var missing = names.Where(n => !map.ContainsKey(n)).ToArray();
+        if (missing.Length > 0)
+        {
+            throw new NotFoundException($"Role(s) not found: {string.Join(", ", missing)}.");
+        }
+
+        return map;
     }
 
     public Task<UserResponse> UnlockAsync(Guid userId, CancellationToken cancellationToken = default)

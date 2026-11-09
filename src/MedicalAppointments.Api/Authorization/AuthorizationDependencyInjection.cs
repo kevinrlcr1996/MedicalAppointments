@@ -83,6 +83,18 @@ public static class AuthorizationDependencyInjection
                     context.User.HasPermission(Permissions.AppointmentsCheckIn) ||
                     context.User.HasPermission(Permissions.AppointmentsComplete) ||
                     context.User.HasPermission(Permissions.AppointmentsMarkNoShow)));
+
+            options.AddPolicy(Policies.ClinicalRecordsRead, policy =>
+                policy.RequireAssertion(context =>
+                    context.User.HasPermission(Permissions.ClinicalRecordsRead)));
+
+            options.AddPolicy(Policies.ClinicalRecordsManage, policy =>
+                policy.RequireAssertion(context =>
+                    context.User.HasPermission(Permissions.ClinicalRecordsCreate) ||
+                    context.User.HasPermission(Permissions.ClinicalRecordsUpdate) ||
+                    context.User.HasPermission(Permissions.ClinicalRecordsFinalize) ||
+                    context.User.HasPermission(Permissions.ClinicalRecordsCorrect) ||
+                    context.User.HasPermission(Permissions.ClinicalRecordsManageAll)));
         });
 
         return services;

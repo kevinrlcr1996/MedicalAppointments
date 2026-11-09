@@ -104,6 +104,13 @@ public static class Permissions
     public const string WaitingListReadAll = "waiting_list.read_all";
     public const string WaitingListManageAll = "waiting_list.manage_all";
 
+    public const string ClinicalRecordsRead = "clinical_records.read";
+    public const string ClinicalRecordsCreate = "clinical_records.create";
+    public const string ClinicalRecordsUpdate = "clinical_records.update";
+    public const string ClinicalRecordsFinalize = "clinical_records.finalize";
+    public const string ClinicalRecordsCorrect = "clinical_records.correct";
+    public const string ClinicalRecordsManageAll = "clinical_records.manage_all";
+
     public static readonly IReadOnlyList<string> All =
     [
         RealtimeTest,
@@ -178,6 +185,12 @@ public static class Permissions
         WaitingListManageOwn,
         WaitingListReadAssigned,
         WaitingListReadAll,
-        WaitingListManageAll
+        WaitingListManageAll,
+        ClinicalRecordsRead,
+        ClinicalRecordsCreate,
+        ClinicalRecordsUpdate,
+        ClinicalRecordsFinalize,
+        ClinicalRecordsCorrect,
+        ClinicalRecordsManageAll
     ];
 }

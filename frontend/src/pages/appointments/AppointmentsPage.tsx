@@ -5,6 +5,7 @@ import {
   CalendarCheck,
   CheckCircle2,
   Clock,
+  FileText,
   LogIn,
   PlayCircle,
   RefreshCcw,
@@ -29,6 +30,7 @@ import { Pagination } from '../../components/ui/Pagination';
 import { Spinner } from '../../components/ui/Spinner';
 import { Textarea } from '../../components/ui/Textarea';
 import { PatientOnboardingForm } from './PatientOnboardingForm';
+import { ClinicalNotesDialog } from './ClinicalNotesDialog';
 
 export function AppointmentsPage() {
   useAppointmentRealtime();
@@ -41,6 +43,7 @@ export function AppointmentsPage() {
   const [status, setStatus] = useState('');
 
   const [cancelTarget, setCancelTarget] = useState<Appointment | null>(null);
+  const [notesTarget, setNotesTarget] = useState<Appointment | null>(null);
   const [cancelIdemKey, setCancelIdemKey] = useState('');
   const [cancelReason, setCancelReason] = useState('');
 
@@ -55,6 +58,8 @@ export function AppointmentsPage() {
     Permissions.AppointmentsCancelAssigned,
     Permissions.AppointmentsCancelOwn,
   ]);
+
+  const canReadNotes = hasPermission(user, Permissions.ClinicalRecordsRead);
 
   const isPatientOnly =
     hasPermission(user, Permissions.AppointmentsReadOwn) &&
@@ -225,6 +230,12 @@ export function AppointmentsPage() {
                       Cancelar
                     </Button>
                   ) : null}
+
+                  {canReadNotes && (row.status === 'InProgress' || row.status === 'Completed') ? (
+                    <Button size="sm" variant="secondary" onClick={() => setNotesTarget(row)} leftIcon={<FileText className="h-4 w-4" />}>
+                      Notas clínicas
+                    </Button>
+                  ) : null}
                 </div>
               ),
             },
@@ -285,6 +296,11 @@ export function AppointmentsPage() {
           </div>
         </div>
       </Modal>
+      <ClinicalNotesDialog
+        open={Boolean(notesTarget)}
+        appointmentId={notesTarget?.id ?? null}
+        onClose={() => setNotesTarget(null)}
+      />
     </div>
   );
 }

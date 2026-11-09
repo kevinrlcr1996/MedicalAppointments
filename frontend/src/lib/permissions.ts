@@ -69,6 +69,13 @@ export const Permissions = {
 
   WaitingRoomRead: 'waiting_room.read',
   WaitingRoomManage: 'waiting_room.manage',
+
+  ClinicalRecordsRead: 'clinical_records.read',
+  ClinicalRecordsCreate: 'clinical_records.create',
+  ClinicalRecordsUpdate: 'clinical_records.update',
+  ClinicalRecordsFinalize: 'clinical_records.finalize',
+  ClinicalRecordsCorrect: 'clinical_records.correct',
+  ClinicalRecordsManageAll: 'clinical_records.manage_all',
 } as const;
 
 export type Permission = (typeof Permissions)[keyof typeof Permissions];

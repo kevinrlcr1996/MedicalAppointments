@@ -49,6 +49,30 @@ public sealed class EfUserStore : IUserStore
         }
     }
 
+    public async Task<IReadOnlyDictionary<string, Guid>> GetRoleIdsByNamesAsync(
+        IEnumerable<string> roleNames,
+        CancellationToken cancellationToken = default)
+    {
+        var normalized = roleNames
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Select(x => x.Trim().ToUpperInvariant())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+        if (normalized.Length == 0)
+        {
+            return new Dictionary<string, Guid>();
+        }
+
+        var rows = await _dbContext.Roles
+            .AsNoTracking()
+            .Where(r => normalized.Contains(r.NormalizedName))
+            .Select(r => new { r.NormalizedName, r.Id })
+            .ToListAsync(cancellationToken);
+
+        return rows.ToDictionary(r => r.NormalizedName, r => r.Id, StringComparer.OrdinalIgnoreCase);
+    }
+
     public Task<User?> FindTrackedByIdAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         return _dbContext.Users.FirstOrDefaultAsync(x => x.Id == userId, cancellationToken);

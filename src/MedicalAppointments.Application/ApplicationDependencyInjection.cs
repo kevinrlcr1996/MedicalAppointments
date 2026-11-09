@@ -3,6 +3,9 @@ using MedicalAppointments.Application.Appointments;
 using MedicalAppointments.Application.Appointments.Auth;
 using MedicalAppointments.Application.Appointments.Outbox;
 using MedicalAppointments.Application.Auth;
+using MedicalAppointments.Application.ClinicalRecords;
+using MedicalAppointments.Application.ClinicalRecords.Auth;
+using MedicalAppointments.Application.ClinicalRecords.Outbox;
 using MedicalAppointments.Application.Common;
 using MedicalAppointments.Application.Foundation;
 using MedicalAppointments.Application.MedicalStructure.Clinics;
@@ -97,6 +100,20 @@ public static class ApplicationDependencyInjection
         services.AddScoped<IOutboxHandler, WaitingRoomUpdatedOutboxHandler>();
         services.AddScoped<IOutboxHandler, PatientCalledOutboxHandler>();
         services.AddScoped<IOutboxHandler, PatientRecalledOutboxHandler>();
+
+        services.AddScoped<IClinicalRecordsAccessService, ClinicalRecordsAccessService>();
+        services.AddScoped<IClinicalRecordsService, ClinicalRecordsService>();
+        services.AddScoped<IClinicalRecordsEventNotifier, ClinicalRecordsEventNotifier>();
+
+        services.AddScoped<IValidator<MedicalAppointments.Application.ClinicalRecords.Common.CreateClinicalNoteCommand>, CreateClinicalNoteCommandValidator>();
+        services.AddScoped<IValidator<MedicalAppointments.Application.ClinicalRecords.Common.UpdateClinicalNoteCommand>, UpdateClinicalNoteCommandValidator>();
+        services.AddScoped<IValidator<MedicalAppointments.Application.ClinicalRecords.Common.CorrectClinicalNoteCommand>, CorrectClinicalNoteCommandValidator>();
+
+        services.AddScoped<IOutboxHandler, ClinicalNoteCreatedOutboxHandler>();
+        services.AddScoped<IOutboxHandler, ClinicalNoteUpdatedOutboxHandler>();
+        services.AddScoped<IOutboxHandler, ClinicalNoteFinalizedOutboxHandler>();
+
+        services.AddScoped<IValidator<CreateUserCommand>, CreateUserCommandValidator>();
 
         return services;
     }

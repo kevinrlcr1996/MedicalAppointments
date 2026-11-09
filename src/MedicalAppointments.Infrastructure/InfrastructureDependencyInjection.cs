@@ -1,5 +1,6 @@
 ﻿using MedicalAppointments.Application.Appointments;
 using MedicalAppointments.Application.Auth;
+using MedicalAppointments.Application.ClinicalRecords.Stores;
 using MedicalAppointments.Application.Common;
 using MedicalAppointments.Application.Common.Audit;
 using MedicalAppointments.Application.Features;
@@ -25,6 +26,7 @@ using MedicalAppointments.Infrastructure.Appointments.Persistence;
 using MedicalAppointments.Infrastructure.Auditing;
 using MedicalAppointments.Infrastructure.Auth;
 using MedicalAppointments.Infrastructure.BackgroundServices;
+using MedicalAppointments.Infrastructure.ClinicalRecords.Persistence;
 using MedicalAppointments.Infrastructure.Idempotency.Persistence;
 using MedicalAppointments.Infrastructure.Identity.Email;
 using MedicalAppointments.Infrastructure.Identity.Persistence;
@@ -126,6 +128,8 @@ public static class InfrastructureDependencyInjection
         services.AddHostedService<WaitingListOfferExpirationWorker>();
 
         services.AddScoped<IWaitingRoomCallStore, EfWaitingRoomCallStore>();
+
+        services.AddScoped<IClinicalNoteStore, EfClinicalNoteStore>();
 
         ConfigureNotifications(services, configuration);
 

@@ -167,6 +167,84 @@ namespace MedicalAppointments.Infrastructure.Persistence.Migrations
                     b.ToTable("AuditLogs", (string)null);
                 });
 
+            modelBuilder.Entity("MedicalAppointments.Domain.ClinicalRecords.ClinicalNote", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("AppointmentId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("AuthorDisplayName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<Guid>("AuthorDoctorId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("AuthorUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid?>("CorrectsNoteId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset?>("FinalizedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid?>("FinalizedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("IsFinal")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTimeOffset>("OccurredAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AppointmentId")
+                        .HasDatabaseName("IX_ClinicalNotes_AppointmentId");
+
+                    b.HasIndex("AuthorDoctorId")
+                        .HasDatabaseName("IX_ClinicalNotes_AuthorDoctorId");
+
+                    b.HasIndex("CorrectsNoteId")
+                        .HasDatabaseName("IX_ClinicalNotes_CorrectsNoteId");
+
+                    b.HasIndex("AppointmentId", "CreatedAt")
+                        .HasDatabaseName("IX_ClinicalNotes_Appointment_Evolution");
+
+                    b.ToTable("ClinicalNotes", (string)null);
+                });
+
             modelBuilder.Entity("MedicalAppointments.Domain.Idempotency.IdempotencyRecord", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1704,6 +1782,32 @@ namespace MedicalAppointments.Infrastructure.Persistence.Migrations
                     b.Navigation("Patient");
 
                     b.Navigation("Room");
+                });
+
+            modelBuilder.Entity("MedicalAppointments.Domain.ClinicalRecords.ClinicalNote", b =>
+                {
+                    b.HasOne("MedicalAppointments.Domain.Appointments.Appointment", "Appointment")
+                        .WithMany()
+                        .HasForeignKey("AppointmentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MedicalAppointments.Domain.MedicalStructure.Doctor", "AuthorDoctor")
+                        .WithMany()
+                        .HasForeignKey("AuthorDoctorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MedicalAppointments.Domain.ClinicalRecords.ClinicalNote", "CorrectsNote")
+                        .WithMany()
+                        .HasForeignKey("CorrectsNoteId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Appointment");
+
+                    b.Navigation("AuthorDoctor");
+
+                    b.Navigation("CorrectsNote");
                 });
 
             modelBuilder.Entity("MedicalAppointments.Domain.Identity.RefreshToken", b =>

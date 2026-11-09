@@ -16,6 +16,10 @@ public interface IUserStore
         DateTimeOffset now,
         CancellationToken cancellationToken = default);
 
+    Task<IReadOnlyDictionary<string, Guid>> GetRoleIdsByNamesAsync(
+        IEnumerable<string> roleNames,
+        CancellationToken cancellationToken = default);
+
     Task<User?> FindTrackedByIdAsync(Guid userId, CancellationToken cancellationToken = default);
 
     Task<User?> FindTrackedByEmailAsync(string normalizedEmail, CancellationToken cancellationToken = default);

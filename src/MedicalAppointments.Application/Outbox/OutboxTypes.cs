@@ -18,4 +18,8 @@ public static class OutboxTypes
     public const string WaitingRoomUpdated = "WaitingRoom.Updated";
     public const string WaitingRoomPatientCalled = "WaitingRoom.PatientCalled";
     public const string WaitingRoomPatientRecalled = "WaitingRoom.PatientRecalled";
+
+    public const string ClinicalNoteCreated = "ClinicalRecords.NoteCreated";
+    public const string ClinicalNoteUpdated = "ClinicalRecords.NoteUpdated";
+    public const string ClinicalNoteFinalized = "ClinicalRecords.NoteFinalized";
 }

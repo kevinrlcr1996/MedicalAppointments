@@ -1,5 +1,6 @@
 ﻿using MedicalAppointments.Domain.Appointments;
 using MedicalAppointments.Domain.Auditing;
+using MedicalAppointments.Domain.ClinicalRecords;
 using MedicalAppointments.Domain.Idempotency;
 using MedicalAppointments.Domain.Identity;
 using MedicalAppointments.Domain.MedicalStructure;
@@ -49,6 +50,8 @@ public sealed class AppDbContext : DbContext
     public DbSet<WaitingListOffer> WaitingListOffers => Set<WaitingListOffer>();
 
     public DbSet<WaitingRoomCall> WaitingRoomCalls => Set<WaitingRoomCall>();
+
+    public DbSet<ClinicalNote> ClinicalNotes => Set<ClinicalNote>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

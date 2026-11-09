@@ -163,6 +163,8 @@ public sealed class IdentitySeeder
             Permissions.FoundationTestWrite,
             Permissions.WaitingListReadAll,
             Permissions.WaitingListManageAll,
+            Permissions.ClinicalRecordsRead,
+            Permissions.ClinicalRecordsManageAll,
         }, now, cancellationToken);
 
         await GrantAsync(Roles.Doctor, new[]
@@ -185,6 +187,11 @@ public sealed class IdentitySeeder
             Permissions.NotificationsRead,
             Permissions.RealtimeTest,
             Permissions.WaitingListReadAssigned,
+            Permissions.ClinicalRecordsRead,
+            Permissions.ClinicalRecordsCreate,
+            Permissions.ClinicalRecordsUpdate,
+            Permissions.ClinicalRecordsFinalize,
+            Permissions.ClinicalRecordsCorrect,
         }, now, cancellationToken);
 
         await GrantAsync(Roles.Receptionist, new[]
@@ -206,6 +213,7 @@ public sealed class IdentitySeeder
             Permissions.RealtimeTest,
             Permissions.WaitingListReadAll,
             Permissions.WaitingListManageAll,
+            Permissions.ClinicalRecordsRead,
         }, now, cancellationToken);
 
         await GrantAsync(Roles.Patient, new[]
