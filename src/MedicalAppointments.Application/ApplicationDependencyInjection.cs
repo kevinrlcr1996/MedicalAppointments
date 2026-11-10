@@ -118,6 +118,28 @@ public static class ApplicationDependencyInjection
         services.AddScoped<IClinicalAttachmentService, ClinicalAttachmentService>();
         services.AddScoped<IOutboxHandler, ClinicalAttachmentUploadedOutboxHandler>();
 
+        services.AddScoped<IVitalSignsService, VitalSignsService>();
+        services.AddScoped<IOutboxHandler, VitalSignsCreatedOutboxHandler>();
+        services.AddScoped<IOutboxHandler, VitalSignsUpdatedOutboxHandler>();
+        services.AddScoped<IOutboxHandler, VitalSignsFinalizedOutboxHandler>();
+
+        services.AddScoped<IDiagnosisService, DiagnosisService>();
+        services.AddScoped<IOutboxHandler, DiagnosisCreatedOutboxHandler>();
+        services.AddScoped<IOutboxHandler, DiagnosisUpdatedOutboxHandler>();
+        services.AddScoped<IOutboxHandler, DiagnosisFinalizedOutboxHandler>();
+
+        services.AddScoped<IPatientAllergyService, PatientAllergyService>();
+        services.AddScoped<IOutboxHandler, AllergyCreatedOutboxHandler>();
+        services.AddScoped<IOutboxHandler, AllergyUpdatedOutboxHandler>();
+        services.AddScoped<IOutboxHandler, AllergyFinalizedOutboxHandler>();
+        services.AddScoped<IOutboxHandler, AllergyResolvedOutboxHandler>();
+
+        services.AddScoped<IPatientMedicationService, PatientMedicationService>();
+        services.AddScoped<IOutboxHandler, MedicationCreatedOutboxHandler>();
+        services.AddScoped<IOutboxHandler, MedicationUpdatedOutboxHandler>();
+        services.AddScoped<IOutboxHandler, MedicationFinalizedOutboxHandler>();
+        services.AddScoped<IOutboxHandler, MedicationStatusChangedOutboxHandler>();
+
         return services;
     }
 }

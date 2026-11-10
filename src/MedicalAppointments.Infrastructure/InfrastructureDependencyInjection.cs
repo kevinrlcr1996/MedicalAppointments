@@ -138,6 +138,14 @@ public static class InfrastructureDependencyInjection
         services.AddSingleton<IFileScanner, ClamAvFileScanner>();
         services.Configure<AttachmentsOptions>(configuration.GetSection(AttachmentsOptions.SectionName));
 
+        services.AddScoped<IVitalSignsStore, EfVitalSignsStore>();
+
+        services.AddScoped<IDiagnosisStore, EfDiagnosisStore>();
+
+        services.AddScoped<IPatientAllergyStore, EfPatientAllergyStore>();
+
+        services.AddScoped<IPatientMedicationStore, EfPatientMedicationStore>();
+
         ConfigureNotifications(services, configuration);
 
         return services;

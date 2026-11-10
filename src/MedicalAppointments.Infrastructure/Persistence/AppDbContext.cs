@@ -54,6 +54,14 @@ public sealed class AppDbContext : DbContext
     public DbSet<ClinicalNote> ClinicalNotes => Set<ClinicalNote>();
     public DbSet<ClinicalAttachment> ClinicalAttachments => Set<ClinicalAttachment>();
 
+    public DbSet<VitalSigns> VitalSigns => Set<VitalSigns>();
+
+    public DbSet<Diagnosis> Diagnoses => Set<Diagnosis>();
+
+    public DbSet<PatientAllergy> PatientAllergies => Set<PatientAllergy>();
+
+    public DbSet<PatientMedication> PatientMedications => Set<PatientMedication>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

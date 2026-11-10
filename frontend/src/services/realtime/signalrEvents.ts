@@ -13,6 +13,10 @@ export const SignalREvents = {
   PatientRecalled: 'PatientRecalled',
   ClinicalNoteUpdated: 'ClinicalNoteUpdated',
   ClinicalAttachmentUpdated: 'ClinicalAttachmentUpdated',
+  VitalSignsUpdated: 'VitalSignsUpdated',
+  DiagnosisUpdated: 'DiagnosisUpdated',
+  PatientAllergyUpdated: 'PatientAllergyUpdated',
+  PatientMedicationUpdated: 'PatientMedicationUpdated',
 } as const;
 
 export const SignalRGroups = {

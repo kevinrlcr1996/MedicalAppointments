@@ -20,4 +20,12 @@ public static class RealtimeEvents
 
     public const string ClinicalNoteUpdated = "ClinicalNoteUpdated";
     public const string ClinicalAttachmentUpdated = "ClinicalAttachmentUpdated";
+
+    public const string VitalSignsUpdated = "VitalSignsUpdated";
+
+    public const string DiagnosisUpdated = "DiagnosisUpdated";
+
+    public const string PatientAllergyUpdated = "PatientAllergyUpdated";
+
+    public const string PatientMedicationUpdated = "PatientMedicationUpdated";
 }

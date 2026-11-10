@@ -328,6 +328,402 @@ namespace MedicalAppointments.Infrastructure.Persistence.Migrations
                     b.ToTable("ClinicalNotes", (string)null);
                 });
 
+            modelBuilder.Entity("MedicalAppointments.Domain.ClinicalRecords.Diagnosis", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("AppointmentId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("AuthorDisplayName")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<Guid>("AuthorDoctorId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("AuthorUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.Property<Guid?>("CorrectsDiagnosisId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("DisplayTerm")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<DateTimeOffset?>("FinalizedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid?>("FinalizedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("IsFinal")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<DateOnly?>("OnsetDate")
+                        .HasColumnType("date");
+
+                    b.Property<DateTimeOffset>("RecordedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AppointmentId")
+                        .HasDatabaseName("IX_Diagnoses_AppointmentId");
+
+                    b.HasIndex("AuthorDoctorId")
+                        .HasDatabaseName("IX_Diagnoses_AuthorDoctorId");
+
+                    b.HasIndex("Code")
+                        .HasDatabaseName("IX_Diagnoses_Code");
+
+                    b.HasIndex("CorrectsDiagnosisId")
+                        .HasDatabaseName("IX_Diagnoses_CorrectsDiagnosisId");
+
+                    b.HasIndex("AppointmentId", "CreatedAt")
+                        .HasDatabaseName("IX_Diagnoses_AppointmentId_CreatedAt");
+
+                    b.ToTable("Diagnoses", (string)null);
+                });
+
+            modelBuilder.Entity("MedicalAppointments.Domain.ClinicalRecords.PatientAllergy", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Allergen")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("AllergenClass")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("AuthorDisplayName")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<Guid>("AuthorDoctorId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("AuthorUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("CorrectsAllergyId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset?>("FinalizedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid?>("FinalizedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("IsFinal")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsResolved")
+                        .HasColumnType("bit");
+
+                    b.Property<DateOnly?>("OnsetDate")
+                        .HasColumnType("date");
+
+                    b.Property<Guid>("PatientId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Reaction")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<DateTimeOffset>("RecordedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset?>("ResolvedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid?>("ResolvedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<string>("Severity")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AuthorDoctorId")
+                        .HasDatabaseName("IX_PatientAllergies_AuthorDoctorId");
+
+                    b.HasIndex("CorrectsAllergyId")
+                        .HasDatabaseName("IX_PatientAllergies_CorrectsAllergyId");
+
+                    b.HasIndex("PatientId")
+                        .HasDatabaseName("IX_PatientAllergies_PatientId");
+
+                    b.HasIndex("PatientId", "IsResolved")
+                        .HasDatabaseName("IX_PatientAllergies_PatientId_IsResolved");
+
+                    b.ToTable("PatientAllergies", (string)null);
+                });
+
+            modelBuilder.Entity("MedicalAppointments.Domain.ClinicalRecords.PatientMedication", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("AuthorDisplayName")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<Guid>("AuthorDoctorId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("AuthorUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("CorrectsMedicationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset?>("DiscontinuedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("DosageForm")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTimeOffset?>("FinalizedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid?>("FinalizedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Frequency")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Indication")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<bool>("IsFinal")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("MedicationName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<Guid>("PatientId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("RecordedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Route")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<DateOnly?>("StartDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<Guid?>("StatusChangedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Strength")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTimeOffset?>("SuspendedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AuthorDoctorId")
+                        .HasDatabaseName("IX_PatientMedications_AuthorDoctorId");
+
+                    b.HasIndex("CorrectsMedicationId")
+                        .HasDatabaseName("IX_PatientMedications_CorrectsMedicationId");
+
+                    b.HasIndex("PatientId")
+                        .HasDatabaseName("IX_PatientMedications_PatientId");
+
+                    b.HasIndex("PatientId", "Status")
+                        .HasDatabaseName("IX_PatientMedications_PatientId_Status");
+
+                    b.ToTable("PatientMedications", (string)null);
+                });
+
+            modelBuilder.Entity("MedicalAppointments.Domain.ClinicalRecords.VitalSigns", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("AppointmentId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("AuthorDisplayName")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<Guid>("AuthorDoctorId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("AuthorUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("CorrectsVitalSignsId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int?>("DiastolicmmHg")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset?>("FinalizedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid?>("FinalizedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int?>("HeartRateBpm")
+                        .HasColumnType("int");
+
+                    b.Property<decimal?>("HeightCm")
+                        .HasPrecision(6, 2)
+                        .HasColumnType("decimal(6,2)");
+
+                    b.Property<bool>("IsFinal")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<int?>("PainScore0to10")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Position")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateTimeOffset>("RecordedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int?>("RespiratoryRatePerMin")
+                        .HasColumnType("int");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<int?>("SpO2Percent")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("SystolicmmHg")
+                        .HasColumnType("int");
+
+                    b.Property<decimal?>("TemperatureC")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("decimal(5,2)");
+
+                    b.Property<string>("TemperatureMethod")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<decimal?>("WeightKg")
+                        .HasPrecision(6, 2)
+                        .HasColumnType("decimal(6,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AppointmentId")
+                        .HasDatabaseName("IX_VitalSigns_AppointmentId");
+
+                    b.HasIndex("AuthorDoctorId")
+                        .HasDatabaseName("IX_VitalSigns_AuthorDoctorId");
+
+                    b.HasIndex("CorrectsVitalSignsId")
+                        .HasDatabaseName("IX_VitalSigns_CorrectsVitalSignsId");
+
+                    b.HasIndex("AppointmentId", "CreatedAt")
+                        .HasDatabaseName("IX_VitalSigns_AppointmentId_CreatedAt");
+
+                    b.ToTable("VitalSigns", (string)null);
+                });
+
             modelBuilder.Entity("MedicalAppointments.Domain.Idempotency.IdempotencyRecord", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1902,6 +2298,110 @@ namespace MedicalAppointments.Infrastructure.Persistence.Migrations
                     b.Navigation("AuthorDoctor");
 
                     b.Navigation("CorrectsNote");
+                });
+
+            modelBuilder.Entity("MedicalAppointments.Domain.ClinicalRecords.Diagnosis", b =>
+                {
+                    b.HasOne("MedicalAppointments.Domain.Appointments.Appointment", "Appointment")
+                        .WithMany()
+                        .HasForeignKey("AppointmentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MedicalAppointments.Domain.MedicalStructure.Doctor", "AuthorDoctor")
+                        .WithMany()
+                        .HasForeignKey("AuthorDoctorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MedicalAppointments.Domain.ClinicalRecords.Diagnosis", "CorrectsDiagnosis")
+                        .WithMany()
+                        .HasForeignKey("CorrectsDiagnosisId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Appointment");
+
+                    b.Navigation("AuthorDoctor");
+
+                    b.Navigation("CorrectsDiagnosis");
+                });
+
+            modelBuilder.Entity("MedicalAppointments.Domain.ClinicalRecords.PatientAllergy", b =>
+                {
+                    b.HasOne("MedicalAppointments.Domain.MedicalStructure.Doctor", "AuthorDoctor")
+                        .WithMany()
+                        .HasForeignKey("AuthorDoctorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MedicalAppointments.Domain.ClinicalRecords.PatientAllergy", "CorrectsAllergy")
+                        .WithMany()
+                        .HasForeignKey("CorrectsAllergyId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("MedicalAppointments.Domain.MedicalStructure.Patient", "Patient")
+                        .WithMany()
+                        .HasForeignKey("PatientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("AuthorDoctor");
+
+                    b.Navigation("CorrectsAllergy");
+
+                    b.Navigation("Patient");
+                });
+
+            modelBuilder.Entity("MedicalAppointments.Domain.ClinicalRecords.PatientMedication", b =>
+                {
+                    b.HasOne("MedicalAppointments.Domain.MedicalStructure.Doctor", "AuthorDoctor")
+                        .WithMany()
+                        .HasForeignKey("AuthorDoctorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MedicalAppointments.Domain.ClinicalRecords.PatientMedication", "CorrectsMedication")
+                        .WithMany()
+                        .HasForeignKey("CorrectsMedicationId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("MedicalAppointments.Domain.MedicalStructure.Patient", "Patient")
+                        .WithMany()
+                        .HasForeignKey("PatientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("AuthorDoctor");
+
+                    b.Navigation("CorrectsMedication");
+
+                    b.Navigation("Patient");
+                });
+
+            modelBuilder.Entity("MedicalAppointments.Domain.ClinicalRecords.VitalSigns", b =>
+                {
+                    b.HasOne("MedicalAppointments.Domain.Appointments.Appointment", "Appointment")
+                        .WithMany()
+                        .HasForeignKey("AppointmentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MedicalAppointments.Domain.MedicalStructure.Doctor", "AuthorDoctor")
+                        .WithMany()
+                        .HasForeignKey("AuthorDoctorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MedicalAppointments.Domain.ClinicalRecords.VitalSigns", "CorrectsVitalSigns")
+                        .WithMany()
+                        .HasForeignKey("CorrectsVitalSignsId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Appointment");
+
+                    b.Navigation("AuthorDoctor");
+
+                    b.Navigation("CorrectsVitalSigns");
                 });
 
             modelBuilder.Entity("MedicalAppointments.Domain.Identity.RefreshToken", b =>

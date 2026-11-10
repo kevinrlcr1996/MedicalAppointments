@@ -23,4 +23,22 @@ public static class OutboxTypes
     public const string ClinicalNoteUpdated = "ClinicalRecords.NoteUpdated";
     public const string ClinicalNoteFinalized = "ClinicalRecords.NoteFinalized";
     public const string ClinicalAttachmentUploaded = "ClinicalRecords.AttachmentUploaded";
+
+    public const string VitalSignsCreated = "ClinicalRecords.VitalSignsCreated";
+    public const string VitalSignsUpdated = "ClinicalRecords.VitalSignsUpdated";
+    public const string VitalSignsFinalized = "ClinicalRecords.VitalSignsFinalized";
+
+    public const string DiagnosisCreated = "ClinicalRecords.DiagnosisCreated";
+    public const string DiagnosisUpdated = "ClinicalRecords.DiagnosisUpdated";
+    public const string DiagnosisFinalized = "ClinicalRecords.DiagnosisFinalized";
+
+    public const string AllergyCreated = "ClinicalRecords.AllergyCreated";
+    public const string AllergyUpdated = "ClinicalRecords.AllergyUpdated";
+    public const string AllergyFinalized = "ClinicalRecords.AllergyFinalized";
+    public const string AllergyResolved = "ClinicalRecords.AllergyResolved";
+
+    public const string MedicationCreated = "ClinicalRecords.MedicationCreated";
+    public const string MedicationUpdated = "ClinicalRecords.MedicationUpdated";
+    public const string MedicationFinalized = "ClinicalRecords.MedicationFinalized";
+    public const string MedicationStatusChanged = "ClinicalRecords.MedicationStatusChanged";
 }

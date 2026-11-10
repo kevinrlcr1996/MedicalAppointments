@@ -4,8 +4,10 @@ import {
   Ban,
   CalendarCheck,
   CheckCircle2,
+  ClipboardList,
   Clock,
   FileText,
+  HeartPulse,
   LogIn,
   PlayCircle,
   RefreshCcw,
@@ -18,6 +20,8 @@ import { ApiError } from '../../services/api/apiClient';
 import { useAuth } from '../../contexts/AuthContext';
 import { hasPermission, hasAnyPermission, Permissions } from '../../lib/permissions';
 import { useAppointmentRealtime } from '../../hooks/useAppointmentRealtime';
+import { useVitalSignsRealtime } from '../../hooks/useVitalSignsRealtime';
+import { useDiagnosisRealtime } from '../../hooks/useDiagnosisRealtime'; // 8d.2
 import { formatDateTime } from '../../utils/formatDate';
 import { Alert } from '../../components/ui/Alert';
 import { Badge } from '../../components/ui/Badge';
@@ -31,9 +35,13 @@ import { Spinner } from '../../components/ui/Spinner';
 import { Textarea } from '../../components/ui/Textarea';
 import { PatientOnboardingForm } from './PatientOnboardingForm';
 import { ClinicalNotesDialog } from './ClinicalNotesDialog';
+import { VitalSignsDialog } from './VitalSignsDialog';
+import { DiagnosisDialog } from './DiagnosisDialog'; // 8d.2
 
 export function AppointmentsPage() {
   useAppointmentRealtime();
+  useVitalSignsRealtime();
+  useDiagnosisRealtime(); // 8d.2
 
   const queryClient = useQueryClient();
   const { user } = useAuth();
@@ -44,6 +52,8 @@ export function AppointmentsPage() {
 
   const [cancelTarget, setCancelTarget] = useState<Appointment | null>(null);
   const [notesTarget, setNotesTarget] = useState<Appointment | null>(null);
+  const [vitalsTarget, setVitalsTarget] = useState<Appointment | null>(null);
+  const [diagnosisTarget, setDiagnosisTarget] = useState<Appointment | null>(null); // 8d.2
   const [cancelIdemKey, setCancelIdemKey] = useState('');
   const [cancelReason, setCancelReason] = useState('');
 
@@ -110,7 +120,7 @@ export function AppointmentsPage() {
 
   function openCancel(appointment: Appointment) {
     setCancelTarget(appointment);
-    setCancelIdemKey(crypto.randomUUID()); // clave estable durante este intento de cancelación
+    setCancelIdemKey(crypto.randomUUID());
     setCancelReason('');
     cancelMutation.reset();
   }
@@ -236,6 +246,18 @@ export function AppointmentsPage() {
                       Notas clínicas
                     </Button>
                   ) : null}
+
+                  {canReadNotes && (row.status === 'InProgress' || row.status === 'Completed') ? (
+                    <Button size="sm" variant="secondary" onClick={() => setVitalsTarget(row)} leftIcon={<HeartPulse className="h-4 w-4" />}>
+                      Signos vitales
+                    </Button>
+                  ) : null}
+
+                  {canReadNotes && (row.status === 'InProgress' || row.status === 'Completed') ? (
+                    <Button size="sm" variant="secondary" onClick={() => setDiagnosisTarget(row)} leftIcon={<ClipboardList className="h-4 w-4" />}>
+                      Diagnósticos
+                    </Button>
+                  ) : null}
                 </div>
               ),
             },
@@ -300,6 +322,16 @@ export function AppointmentsPage() {
         open={Boolean(notesTarget)}
         appointmentId={notesTarget?.id ?? null}
         onClose={() => setNotesTarget(null)}
+      />
+      <VitalSignsDialog
+        open={Boolean(vitalsTarget)}
+        appointmentId={vitalsTarget?.id ?? null}
+        onClose={() => setVitalsTarget(null)}
+      />
+      <DiagnosisDialog
+        open={Boolean(diagnosisTarget)}
+        appointmentId={diagnosisTarget?.id ?? null}
+        onClose={() => setDiagnosisTarget(null)}
       />
     </div>
   );

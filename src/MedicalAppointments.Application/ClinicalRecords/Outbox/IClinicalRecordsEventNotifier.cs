@@ -18,4 +18,30 @@ public interface IClinicalRecordsEventNotifier
         string changeType,
         DateTimeOffset now,
         string? correlationId);
+
+    void EnqueueVitalSignsEvent(
+        Domain.ClinicalRecords.VitalSigns vitalSigns,
+        Domain.Appointments.Appointment appointment,
+        string changeType,
+        DateTimeOffset now,
+        string? correlationId);
+
+    void EnqueueDiagnosisEvent(
+        Domain.ClinicalRecords.Diagnosis diagnosis,
+        Domain.Appointments.Appointment appointment,
+        string changeType,
+        DateTimeOffset now,
+        string? correlationId);
+
+    void EnqueueAllergyEvent(
+        Domain.ClinicalRecords.PatientAllergy allergy,
+        string changeType,
+        DateTimeOffset now,
+        string? correlationId);
+
+    void EnqueueMedicationEvent(
+        Domain.ClinicalRecords.PatientMedication medication,
+        string changeType,
+        DateTimeOffset now,
+        string? correlationId);
 }
