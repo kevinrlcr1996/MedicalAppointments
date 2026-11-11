@@ -7,6 +7,7 @@ interface ModalProps {
   title: string;
   onClose: () => void;
   children: ReactNode;
+  footer?: ReactNode; // FIX-shell: pie OPCIONAL, siempre visible (pinned abajo). Los callers existentes no lo pasan => sin cambio de comportamiento.
   size?: 'sm' | 'md' | 'lg' | 'xl';
 }
 
@@ -17,7 +18,7 @@ const sizeStyles = {
   xl: 'max-w-5xl',
 };
 
-export function Modal({ open, title, onClose, children, size = 'md' }: ModalProps) {
+export function Modal({ open, title, onClose, children, footer, size = 'md' }: ModalProps) {
   useEffect(() => {
     if (!open) {
       return;
@@ -48,16 +49,20 @@ export function Modal({ open, title, onClose, children, size = 'md' }: ModalProp
         aria-hidden="true"
       />
 
+      {/* FIX-shell: ANTES el panel no tenía max-height ni flex-col ni scroll => un form alto
+          desbordaba simétricamente (corte arriba+abajo, la X off-screen). AHORA: alto acotado,
+          header pinned, body scrolleable (flex-1 + min-h-0 + overflow-y-auto: el min-h-0 es lo
+          que hace que el scroll enganche dentro de un flex-col), footer pinned si se pasa. */}
       <div
         role="dialog"
         aria-modal="true"
         aria-label={title}
         className={cn(
-          'relative w-full rounded-2xl border border-slate-200 bg-white p-6 shadow-xl dark:border-slate-800 dark:bg-slate-900',
+          'relative flex max-h-[calc(100vh-2rem)] w-full flex-col rounded-2xl border border-slate-200 bg-white shadow-xl dark:border-slate-800 dark:bg-slate-900',
           sizeStyles[size],
         )}
       >
-        <div className="mb-4 flex items-center justify-between gap-3">
+        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-slate-200 px-6 py-4 dark:border-slate-800">
           <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-50">{title}</h2>
 
           <button
@@ -70,7 +75,15 @@ export function Modal({ open, title, onClose, children, size = 'md' }: ModalProp
           </button>
         </div>
 
-        {children}
+        <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
+          {children}
+        </div>
+
+        {footer ? (
+          <div className="shrink-0 border-t border-slate-200 px-6 py-4 dark:border-slate-800">
+            {footer}
+          </div>
+        ) : null}
       </div>
     </div>
   );

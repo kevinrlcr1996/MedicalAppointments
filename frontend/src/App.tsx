@@ -80,6 +80,39 @@ export default function App() {
             <Route path="/availability" element={<AvailabilityPage />} />
           </Route>
 
+          {/* FIX-routing: /appointments y /appointments/book movidas DENTRO de AppLayout.
+              Antes eran hermanas de AppLayout (bajo ProtectedRoute) => sin header/sidebar.
+              Bloques copiados VERBATIM (mismos permissions/path/element); solo cambió el nivel.
+              El patrón AppLayout > RequireAnyPermission > page ya lo usan /waiting-list y
+              /waiting-room dentro de AppLayout y funcionan. */}
+          <Route
+            element={
+              <RequireAnyPermission
+                permissions={[
+                  Permissions.AppointmentsReadAll,
+                  Permissions.AppointmentsReadAssigned,
+                  Permissions.AppointmentsReadOwn,
+                ]}
+              />
+            }
+          >
+            <Route path="/appointments" element={<AppointmentsPage />} />
+          </Route>
+
+          <Route
+            element={
+              <RequireAnyPermission
+                permissions={[
+                  Permissions.AppointmentsCreateAll,
+                  Permissions.AppointmentsCreateAssigned,
+                  Permissions.AppointmentsCreateOwn,
+                ]}
+              />
+            }
+          >
+            <Route path="/appointments/book" element={<BookAppointmentPage />} />
+          </Route>
+
           <Route
             element={
               <RequireAnyPermission
@@ -103,33 +136,8 @@ export default function App() {
 
           <Route path="/forbidden" element={<ForbiddenPage />} />
         </Route>
-        <Route
-          element={
-            <RequireAnyPermission
-              permissions={[
-                Permissions.AppointmentsReadAll,
-                Permissions.AppointmentsReadAssigned,
-                Permissions.AppointmentsReadOwn,
-              ]}
-            />
-          }
-        >
-          <Route path="/appointments" element={<AppointmentsPage />} />
-        </Route>
 
-        <Route
-          element={
-            <RequireAnyPermission
-              permissions={[
-                Permissions.AppointmentsCreateAll,
-                Permissions.AppointmentsCreateAssigned,
-                Permissions.AppointmentsCreateOwn,
-              ]}
-            />
-          }
-        >
-          <Route path="/appointments/book" element={<BookAppointmentPage />} />
-        </Route>
+        {/* redirect raíz: no renderiza página con chrome, así que vive FUERA de AppLayout (correcto) */}
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
       </Route>
 

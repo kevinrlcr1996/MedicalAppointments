@@ -241,8 +241,8 @@ export function DoctorsPage() {
       const normalizedErrors: ValidationError[] = Array.isArray(validationErrors)
         ? validationErrors
         : Object.entries(validationErrors ?? {}).flatMap(([propertyName, messages]) =>
-            messages.map((errorMessage) => ({ propertyName, errorMessage })),
-          );
+          messages.map((errorMessage) => ({ propertyName, errorMessage })),
+        );
 
       for (const validationError of normalizedErrors) {
         const fieldName = Object.keys(doctorSchema.shape).find(
@@ -442,8 +442,25 @@ export function DoctorsPage() {
         title={editingDoctor ? 'Editar médico' : 'Nuevo médico'}
         onClose={() => setModalOpen(false)}
         size="xl"
+        footer={
+          <div className="space-y-3">
+            {saveMutation.isError ? (
+              <Alert variant="error" title="No se pudo guardar el médico">
+                {saveMutation.error instanceof ApiError ? saveMutation.error.message : 'Error inesperado.'}
+              </Alert>
+            ) : null}
+            <div className="flex justify-end gap-3">
+              <Button type="button" variant="secondary" onClick={() => setModalOpen(false)}>
+                Cancelar
+              </Button>
+              <Button type="submit" form="doctor-form" loading={saveMutation.isPending} leftIcon={<Save className="h-4 w-4" />}>
+                Guardar
+              </Button>
+            </div>
+          </div>
+        }
       >
-        <form className="space-y-6" onSubmit={form.handleSubmit((values) => saveMutation.mutate(values))}>
+        <form id="doctor-form" className="space-y-6" onSubmit={form.handleSubmit((values) => saveMutation.mutate(values))}>
           <div className="grid gap-4 sm:grid-cols-2">
             <FormField label="Nombre" htmlFor="firstName" required error={form.formState.errors.firstName?.message}>
               <Input id="firstName" {...form.register('firstName')} invalid={Boolean(form.formState.errors.firstName)} />
@@ -548,21 +565,6 @@ export function DoctorsPage() {
           <FormField label="Idiomas" htmlFor="languages">
             <TagsInput value={languages} onChange={setLanguages} placeholder="ES, EN, FR..." />
           </FormField>
-
-          {saveMutation.isError ? (
-            <Alert variant="error" title="No se pudo guardar el médico">
-              {saveMutation.error instanceof ApiError ? saveMutation.error.message : 'Error inesperado.'}
-            </Alert>
-          ) : null}
-
-          <div className="flex justify-end gap-3">
-            <Button variant="secondary" onClick={() => setModalOpen(false)}>
-              Cancelar
-            </Button>
-            <Button type="submit" loading={saveMutation.isPending} leftIcon={<Save className="h-4 w-4" />}>
-              Guardar
-            </Button>
-          </div>
         </form>
       </Modal>
     </div>
