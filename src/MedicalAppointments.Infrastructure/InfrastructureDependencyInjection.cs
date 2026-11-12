@@ -33,6 +33,8 @@ using MedicalAppointments.Infrastructure.ClinicalRecords.Storage;
 using MedicalAppointments.Infrastructure.Idempotency.Persistence;
 using MedicalAppointments.Infrastructure.Identity.Email;
 using MedicalAppointments.Infrastructure.Identity.Persistence;
+using MedicalAppointments.Application.Auditing.Stores;
+using MedicalAppointments.Infrastructure.Auditing.Persistence;
 using MedicalAppointments.Infrastructure.Identity.Security;
 using MedicalAppointments.Infrastructure.Identity.Seeding;
 using MedicalAppointments.Infrastructure.MedicalStructure.Persistence;
@@ -70,6 +72,7 @@ public static class InfrastructureDependencyInjection
         services.AddScoped<IOutboxMessageStore, EfOutboxMessageStore>();
 
         services.AddScoped<IUserStore, EfUserStore>();
+        services.AddScoped<IAuditLogStore, EfAuditLogStore>();
         services.AddScoped<IRefreshTokenStore, EfRefreshTokenStore>();
         services.AddScoped<IdentitySeeder>();
 
@@ -104,8 +107,10 @@ public static class InfrastructureDependencyInjection
 
         services.Configure<OutboxProcessingOptions>(configuration.GetSection("Outbox"));
         services.Configure<OutboxWorkerOptions>(configuration.GetSection("Outbox"));
+        services.Configure<IdempotencyCleanupOptions>(configuration.GetSection(IdempotencyCleanupOptions.SectionName));
 
         services.AddHostedService<OutboxProcessorWorker>();
+        services.AddHostedService<IdempotencyCleanupWorker>();
 
         services.AddSignalR();
         services.AddSingleton<IRealtimePublisher, SignalRRealtimePublisher>();

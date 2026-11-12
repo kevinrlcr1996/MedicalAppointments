@@ -18,6 +18,10 @@ Production notes:
 - Configure backups and restore tests.
 - Evaluate SignalR backplane only if multiple API instances are required.
 
+### Idempotency retention worker
+
+The API removes expired idempotency keys at startup and once per polling interval. The worker deletes at most one ordered batch per run, using `ExpiresAt` as the cutoff. Configure `IdempotencyCleanup:PollingIntervalSeconds` and `IdempotencyCleanup:BatchSize` for the expected request volume. This retention applies only to idempotency response records; it is not a clinical-record or audit-log retention policy.
+
 ## SQL Server backup and restore verification
 
 The Compose SQL Server stores its database files in the `sql-data` named volume. A Docker volume is not an off-host backup. Create a native `.bak` with SQL Server, copy it out of the container, and store it encrypted somewhere separate from the machine running Compose.

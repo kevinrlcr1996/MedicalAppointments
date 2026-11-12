@@ -29,6 +29,7 @@ import { WaitingRoomDisplayPage } from './pages/waiting-room/WaitingRoomDisplayP
 import { WaitingRoomBoardPage } from './pages/waiting-room/WaitingRoomBoardPage';
 import { UsersPage } from './pages/UsersPage';
 import { ReportsPage } from './pages/reports/ReportsPage';
+import { AuditLogsPage } from './pages/auditing/AuditLogsPage';
 
 export default function App() {
   return (
@@ -46,6 +47,9 @@ export default function App() {
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route element={<RequirePermission permission={Permissions.ReportsRead} />}>
             <Route path="/reports" element={<ReportsPage />} />
+          </Route>
+          <Route element={<RequirePermission permission={Permissions.AuditRead} />}>
+            <Route path="/audit-logs" element={<AuditLogsPage />} />
           </Route>
           <Route path="/realtime" element={<FoundationRealtimePage />} />
 

@@ -26,9 +26,10 @@ public sealed class AvailabilityController : ControllerBase
         Guid clinicId,
         [FromQuery] DateOnly date,
         [FromQuery] int? slotDurationMinutes,
+        [FromQuery] Guid? roomId,
         CancellationToken cancellationToken)
     {
-        var query = new AvailabilityQuery(doctorId, clinicId, date, slotDurationMinutes);
+        var query = new AvailabilityQuery(doctorId, clinicId, date, slotDurationMinutes, roomId);
         var result = await _service.GetDayAsync(query, cancellationToken);
 
         return Ok(new AvailabilityDayResponse(

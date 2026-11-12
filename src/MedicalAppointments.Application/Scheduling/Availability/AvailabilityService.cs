@@ -1,5 +1,6 @@
 ﻿using MedicalAppointments.Application.Common.Exceptions;
 using MedicalAppointments.Application.MedicalStructure.Doctors;
+using MedicalAppointments.Application.MedicalStructure.Rooms;
 using MedicalAppointments.Application.Scheduling.Blockouts;
 using MedicalAppointments.Application.Scheduling.Common;
 using MedicalAppointments.Application.Scheduling.DoctorSchedules;
@@ -11,6 +12,7 @@ namespace MedicalAppointments.Application.Scheduling.Availability;
 public sealed class AvailabilityService : IAvailabilityService
 {
     private readonly IDoctorStore _doctorStore;
+    private readonly IRoomStore _roomStore;
     private readonly ISchedulingClinicLookup _clinicLookup;
     private readonly IDoctorScheduleStore _scheduleStore;
     private readonly IScheduleExceptionStore _exceptionStore;
@@ -21,6 +23,7 @@ public sealed class AvailabilityService : IAvailabilityService
 
     public AvailabilityService(
         IDoctorStore doctorStore,
+        IRoomStore roomStore,
         ISchedulingClinicLookup clinicLookup,
         IDoctorScheduleStore scheduleStore,
         IScheduleExceptionStore exceptionStore,
@@ -30,6 +33,7 @@ public sealed class AvailabilityService : IAvailabilityService
         ITimeZoneConverter timeZoneConverter)
     {
         _doctorStore = doctorStore;
+        _roomStore = roomStore;
         _clinicLookup = clinicLookup;
         _scheduleStore = scheduleStore;
         _exceptionStore = exceptionStore;
@@ -52,6 +56,20 @@ public sealed class AvailabilityService : IAvailabilityService
             ?? throw new NotFoundException("Clinic not found.");
 
         var timeZoneId = string.IsNullOrWhiteSpace(clinic.TimeZoneId) ? "UTC" : clinic.TimeZoneId;
+
+        if (query.RoomId.HasValue)
+        {
+            var room = await _roomStore.GetTrackedByIdAsync(query.RoomId.Value, cancellationToken);
+            if (room is null || room.ClinicId != query.ClinicId)
+            {
+                throw new NotFoundException("Room not found in the selected clinic.");
+            }
+
+            if (!room.IsActive)
+            {
+                return Empty(query, timeZoneId);
+            }
+        }
 
         if (!clinic.IsActive)
         {
@@ -134,6 +152,23 @@ public sealed class AvailabilityService : IAvailabilityService
             cancellationToken);
 
         removals.AddRange(occupied);
+
+        if (query.RoomId.HasValue)
+        {
+            var roomBlockouts = await _blockoutStore.GetRoomOverlappingAsync(
+                query.RoomId.Value,
+                dayRange.StartAt,
+                dayRange.EndAt,
+                cancellationToken);
+            removals.AddRange(roomBlockouts.Select(x => new TimeRange(x.StartAt, x.EndAt)));
+
+            var roomOccupied = await _occupancyProvider.GetOccupiedRoomRangesAsync(
+                query.RoomId.Value,
+                dayRange.StartAt,
+                dayRange.EndAt,
+                cancellationToken);
+            removals.AddRange(roomOccupied);
+        }
 
         var slots = new List<AvailabilitySlotDto>();
 

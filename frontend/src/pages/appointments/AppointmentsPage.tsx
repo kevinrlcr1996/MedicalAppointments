@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Ban,
   CalendarCheck,
+  CalendarDays,
   CalendarClock,
   CheckCircle2,
   ClipboardList,
@@ -10,6 +11,7 @@ import {
   FileText,
   HeartPulse,
   LogIn,
+  List,
   PlayCircle,
   RefreshCcw,
   Trash2,
@@ -39,6 +41,7 @@ import { PatientOnboardingForm } from './PatientOnboardingForm';
 import { ClinicalNotesDialog } from './ClinicalNotesDialog';
 import { VitalSignsDialog } from './VitalSignsDialog';
 import { DiagnosisDialog } from './DiagnosisDialog'; // 8d.2
+import { AppointmentCalendar } from './AppointmentCalendar';
 
 export function AppointmentsPage() {
   useAppointmentRealtime();
@@ -51,6 +54,8 @@ export function AppointmentsPage() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
   const [status, setStatus] = useState('');
+  const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
+  const [calendarRefreshKey, setCalendarRefreshKey] = useState(0);
 
   const [cancelTarget, setCancelTarget] = useState<Appointment | null>(null);
   const [rescheduleTarget, setRescheduleTarget] = useState<Appointment | null>(null);
@@ -122,7 +127,7 @@ export function AppointmentsPage() {
   const appointmentsQuery = useQuery({
     queryKey: ['appointments', { page, pageSize, status }],
     queryFn: () => appointmentsApi.list({ page, pageSize, status: status || undefined }),
-    enabled: canRead && !needsOnboarding && (!isPatientOnly || Boolean(patientQuery.data)),
+    enabled: viewMode === 'list' && canRead && !needsOnboarding && (!isPatientOnly || Boolean(patientQuery.data)),
   });
 
   const actionMutation = useMutation({
@@ -193,13 +198,11 @@ export function AppointmentsPage() {
         title="Citas"
         description="Gestión de citas médicas."
         actions={
-          <Button
-            variant="secondary"
-            onClick={() => void appointmentsQuery.refetch()}
-            leftIcon={<RefreshCcw className="h-4 w-4" />}
-          >
-            Recargar
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button variant={viewMode === 'list' ? 'primary' : 'secondary'} onClick={() => setViewMode('list')} leftIcon={<List className="h-4 w-4" />}>Lista</Button>
+            <Button variant={viewMode === 'calendar' ? 'primary' : 'secondary'} onClick={() => setViewMode('calendar')} leftIcon={<CalendarDays className="h-4 w-4" />}>Calendario</Button>
+            <Button variant="secondary" onClick={() => { if (viewMode === 'list') void appointmentsQuery.refetch(); else setCalendarRefreshKey((current) => current + 1); }} leftIcon={<RefreshCcw className="h-4 w-4" />}>Recargar</Button>
+          </div>
         }
       />
 
@@ -227,7 +230,7 @@ export function AppointmentsPage() {
         </div>
       </Card>
 
-      {appointmentsQuery.isError ? (
+      {viewMode === 'list' && appointmentsQuery.isError ? (
         <Alert variant="error" title="Error al cargar citas">
           {appointmentsQuery.error instanceof ApiError ? appointmentsQuery.error.message : 'Error inesperado.'}
         </Alert>
@@ -245,7 +248,15 @@ export function AppointmentsPage() {
         </Alert>
       ) : null}
 
-      <Card>
+      {viewMode === 'calendar' ? (
+        <AppointmentCalendar
+          status={status}
+          enabled={canRead && !needsOnboarding && (!isPatientOnly || Boolean(patientQuery.data))}
+          refreshKey={calendarRefreshKey}
+        />
+      ) : null}
+
+      {viewMode === 'list' ? <Card>
         <DataTable
           loading={appointmentsQuery.isLoading}
           rows={appointmentsQuery.data?.items ?? []}
@@ -334,7 +345,7 @@ export function AppointmentsPage() {
             onPageSizeChange={(size) => { setPageSize(size); setPage(1); }}
           />
         ) : null}
-      </Card>
+      </Card> : null}
 
       <Modal
         open={Boolean(cancelTarget)}

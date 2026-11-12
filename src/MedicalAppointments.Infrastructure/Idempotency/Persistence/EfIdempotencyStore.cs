@@ -44,4 +44,21 @@ public sealed class EfIdempotencyStore : IIdempotencyStore
                     .SetProperty(x => x.CompletedAt, now),
                 cancellationToken);
     }
+
+    public Task<int> DeleteExpiredAsync(
+        DateTimeOffset now,
+        int batchSize,
+        CancellationToken cancellationToken = default)
+    {
+        if (batchSize <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(batchSize), "Batch size must be greater than zero.");
+        }
+
+        return _dbContext.IdempotencyRecords
+            .Where(x => x.ExpiresAt <= now)
+            .OrderBy(x => x.ExpiresAt)
+            .Take(batchSize)
+            .ExecuteDeleteAsync(cancellationToken);
+    }
 }

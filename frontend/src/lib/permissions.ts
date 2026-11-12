@@ -60,6 +60,7 @@ export const Permissions = {
 
   MedicalRecordsRead: 'medical_records.read',
   ReportsRead: 'reports.read',
+  AuditRead: 'audit.read',
 
   WaitingListReadOwn: 'waiting_list.read_own',
   WaitingListManageOwn: 'waiting_list.manage_own',

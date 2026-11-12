@@ -8,4 +8,10 @@ public interface IAppointmentOccupancyProvider
         DateTimeOffset fromUtc,
         DateTimeOffset toUtc,
         CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<TimeRange>> GetOccupiedRoomRangesAsync(
+        Guid roomId,
+        DateTimeOffset fromUtc,
+        DateTimeOffset toUtc,
+        CancellationToken cancellationToken = default);
 }

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import {
   Activity,
+  ClipboardList,
   BarChart3,
   Building2,
   CalendarCheck,
@@ -40,6 +41,7 @@ const navItems: NavItem[] = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, permissions: [] },
   { to: '/realtime', label: 'Realtime Test', icon: Activity, permissions: [Permissions.RealtimeTest] },
   { to: '/reports', label: 'Reportes', icon: BarChart3, permissions: [Permissions.ReportsRead] },
+  { to: '/audit-logs', label: 'Auditoría', icon: ClipboardList, permissions: [Permissions.AuditRead] },
 
   {
     to: '/appointments',

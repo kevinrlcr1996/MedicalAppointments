@@ -29,6 +29,12 @@ public interface IAppointmentStore
         DateTimeOffset toUtc,
         CancellationToken cancellationToken = default);
 
+    Task<IReadOnlyList<TimeRange>> GetOccupiedRoomRangesAsync(
+        Guid roomId,
+        DateTimeOffset fromUtc,
+        DateTimeOffset toUtc,
+        CancellationToken cancellationToken = default);
+
     Task<bool> ExistsActiveRoomOverlapAsync(
         Guid roomId,
         DateTimeOffset startUtc,

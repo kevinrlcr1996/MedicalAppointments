@@ -26,4 +26,17 @@ public sealed class EfAppointmentOccupancyProvider : IAppointmentOccupancyProvid
             toUtc,
             cancellationToken);
     }
+
+    public Task<IReadOnlyList<TimeRange>> GetOccupiedRoomRangesAsync(
+        Guid roomId,
+        DateTimeOffset fromUtc,
+        DateTimeOffset toUtc,
+        CancellationToken cancellationToken = default)
+    {
+        return _appointmentStore.GetOccupiedRoomRangesAsync(
+            roomId,
+            fromUtc,
+            toUtc,
+            cancellationToken);
+    }
 }

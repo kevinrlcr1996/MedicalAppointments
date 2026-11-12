@@ -1,5 +1,6 @@
 ﻿using FluentValidation;
 using MedicalAppointments.Application.Appointments;
+using MedicalAppointments.Application.Auditing;
 using MedicalAppointments.Application.Appointments.Auth;
 using MedicalAppointments.Application.Appointments.Outbox;
 using MedicalAppointments.Application.Auth;
@@ -47,6 +48,7 @@ public static class ApplicationDependencyInjection
         services.AddSingleton(JsonDefaults.Options);
 
         services.AddScoped<IAuthService, AuthService>();
+        services.AddScoped<IAuditLogService, AuditLogService>();
         services.AddScoped<IUserAdminService, UserAdminService>();
         services.AddScoped<IAppointmentReportsService, AppointmentReportsService>();
 

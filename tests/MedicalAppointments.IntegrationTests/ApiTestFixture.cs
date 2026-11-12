@@ -45,6 +45,7 @@ public sealed class ApiTestFixture : IAsyncLifetime
                 builder.UseSetting("Auth:RefreshToken:CookieSecure", "false");
                 builder.UseSetting("Outbox:PollingIntervalSeconds", "1");
                 builder.UseSetting("Outbox:BatchSize", "10");
+                builder.UseSetting("IdempotencyCleanup:PollingIntervalSeconds", "3600");
                 builder.UseSetting("Seed:Enabled", "true");
                 builder.UseSetting("Seed:DemoData", "true");
                 builder.UseSetting("Seed:SuperAdminEmail", SuperAdminEmail);

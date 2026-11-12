@@ -17,4 +17,9 @@ public interface IIdempotencyStore
         string responsePayload,
         DateTimeOffset now,
         CancellationToken cancellationToken = default);
+
+    Task<int> DeleteExpiredAsync(
+        DateTimeOffset now,
+        int batchSize,
+        CancellationToken cancellationToken = default);
 }

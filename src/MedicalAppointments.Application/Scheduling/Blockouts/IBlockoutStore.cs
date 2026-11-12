@@ -17,6 +17,12 @@ public interface IBlockoutStore
         DateTimeOffset toUtc,
         CancellationToken cancellationToken = default);
 
+    Task<IReadOnlyList<Blockout>> GetRoomOverlappingAsync(
+        Guid roomId,
+        DateTimeOffset fromUtc,
+        DateTimeOffset toUtc,
+        CancellationToken cancellationToken = default);
+
     Task<PagedResult<Blockout>> GetPagedAsync(
         BlockoutQuery query,
         CancellationToken cancellationToken = default);

@@ -137,6 +137,26 @@ public sealed class EfAppointmentStore : IAppointmentStore
             .ToList();
     }
 
+    public async Task<IReadOnlyList<TimeRange>> GetOccupiedRoomRangesAsync(
+        Guid roomId,
+        DateTimeOffset fromUtc,
+        DateTimeOffset toUtc,
+        CancellationToken cancellationToken = default)
+    {
+        var ranges = await _dbContext.Appointments
+            .AsNoTracking()
+            .Where(x => x.RoomId == roomId
+                && OccupyingStatuses.Contains(x.Status)
+                && x.StartAt < toUtc
+                && x.EndAt > fromUtc)
+            .Select(x => new { x.StartAt, x.EndAt })
+            .ToListAsync(cancellationToken);
+
+        return ranges
+            .Select(x => new TimeRange(x.StartAt, x.EndAt))
+            .ToList();
+    }
+
     public Task<bool> ExistsActiveRoomOverlapAsync(
         Guid roomId,
         DateTimeOffset startUtc,

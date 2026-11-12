@@ -35,6 +35,13 @@ Appointment reports:
 - Cancellations are attributed to the appointment's scheduled date. An appointment is counted under each specialty assigned to its doctor.
 - Revenue is not available until its financial definition is implemented.
 
+Audit log:
+
+- GET /api/v1/audit-logs?fromDate=YYYY-MM-DD&toDate=YYYY-MM-DD&page=1&pageSize=25
+- Optional filters: `action` (contains), `entityName` (exact), `userId`, and `entityId`.
+- Requires `audit.read` (seeded for SuperAdmin). Search periods are limited to 366 days and page size to 100.
+- The response is metadata-only; it never returns `OldValues`, `NewValues`, IP addresses, or user agents.
+
 Prescription dispensing:
 
 - POST /api/v1/clinical-records/prescriptions/{id}/dispense requires `prescriptions.dispense`.

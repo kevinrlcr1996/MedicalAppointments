@@ -8,6 +8,7 @@ using MedicalAppointments.Application.Idempotency;
 using MedicalAppointments.Application.MedicalStructure.Clinics;
 using MedicalAppointments.Application.MedicalStructure.Doctors;
 using MedicalAppointments.Application.MedicalStructure.Patients;
+using MedicalAppointments.Application.MedicalStructure.Rooms;
 using MedicalAppointments.Application.Scheduling.Availability;
 using MedicalAppointments.Application.WaitingList.Outbox;
 using MedicalAppointments.Domain.Appointments;
@@ -36,6 +37,7 @@ public sealed class AppointmentBookingService : IAppointmentBookingService
     private readonly IPatientStore _patientStore;
     private readonly IDoctorStore _doctorStore;
     private readonly IClinicStore _clinicStore;
+    private readonly IRoomStore _roomStore;
     private readonly IAvailabilityService _availabilityService;
 
     private readonly IBookingCoordinator _bookingCoordinator;
@@ -60,6 +62,7 @@ public sealed class AppointmentBookingService : IAppointmentBookingService
         IPatientStore patientStore,
         IDoctorStore doctorStore,
         IClinicStore clinicStore,
+        IRoomStore roomStore,
         IAvailabilityService availabilityService,
         IBookingCoordinator bookingCoordinator,
         IIdempotencyStore idempotencyStore,
@@ -82,6 +85,7 @@ public sealed class AppointmentBookingService : IAppointmentBookingService
         _patientStore = patientStore;
         _doctorStore = doctorStore;
         _clinicStore = clinicStore;
+        _roomStore = roomStore;
         _availabilityService = availabilityService;
         _bookingCoordinator = bookingCoordinator;
         _idempotencyStore = idempotencyStore;
@@ -191,8 +195,8 @@ public sealed class AppointmentBookingService : IAppointmentBookingService
         }
 
         await ValidateReferencesAsync(command, cancellationToken);
-        await ValidateSlotAsync(command.LocalDate, command.DoctorId, command.ClinicId, command.StartAtUtc, command.EndAtUtc, cancellationToken);
-        await ValidateRoomAsync(command.RoomId, command.StartAtUtc, command.EndAtUtc, null, cancellationToken);
+        await ValidateRoomAsync(command.RoomId, command.ClinicId, command.StartAtUtc, command.EndAtUtc, null, cancellationToken);
+        await ValidateSlotAsync(command.LocalDate, command.DoctorId, command.ClinicId, command.RoomId, command.StartAtUtc, command.EndAtUtc, cancellationToken);
         ValidateAdvanceWindow(command.StartAtUtc, now);
 
         var patientUserId = await _patientStore.GetUserIdAsync(command.PatientId, cancellationToken);
@@ -391,12 +395,14 @@ public sealed class AppointmentBookingService : IAppointmentBookingService
             createCommand.LocalDate,
             createCommand.DoctorId,
             createCommand.ClinicId,
+            createCommand.RoomId,
             createCommand.StartAtUtc,
             createCommand.EndAtUtc,
             cancellationToken);
 
         await ValidateRoomAsync(
             createCommand.RoomId,
+            createCommand.ClinicId,
             createCommand.StartAtUtc,
             createCommand.EndAtUtc,
             excludeAppointmentId: null,
@@ -494,12 +500,13 @@ public sealed class AppointmentBookingService : IAppointmentBookingService
         DateOnly localDate,
         Guid doctorId,
         Guid clinicId,
+        Guid? roomId,
         DateTimeOffset startUtc,
         DateTimeOffset endUtc,
         CancellationToken cancellationToken)
     {
         var availability = await _availabilityService.GetDayAsync(
-            new AvailabilityQuery(doctorId, clinicId, localDate, null),
+            new AvailabilityQuery(doctorId, clinicId, localDate, null, roomId),
             cancellationToken);
 
         var slotExists = availability.Slots.Any(slot =>
@@ -514,6 +521,7 @@ public sealed class AppointmentBookingService : IAppointmentBookingService
 
     private async Task ValidateRoomAsync(
         Guid? roomId,
+        Guid clinicId,
         DateTimeOffset startUtc,
         DateTimeOffset endUtc,
         Guid? excludeAppointmentId,
@@ -522,6 +530,17 @@ public sealed class AppointmentBookingService : IAppointmentBookingService
         if (!roomId.HasValue)
         {
             return;
+        }
+
+        var room = await _roomStore.GetTrackedByIdAsync(roomId.Value, cancellationToken);
+        if (room is null || room.ClinicId != clinicId)
+        {
+            throw new NotFoundException("Room not found in the selected clinic.");
+        }
+
+        if (!room.IsActive)
+        {
+            throw new ConflictException("The selected room is inactive.");
         }
 
         var overlap = await _appointmentStore.ExistsActiveRoomOverlapAsync(

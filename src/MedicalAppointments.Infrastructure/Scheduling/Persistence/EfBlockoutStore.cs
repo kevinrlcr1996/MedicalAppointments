@@ -42,6 +42,21 @@ public sealed class EfBlockoutStore : IBlockoutStore
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<IReadOnlyList<Blockout>> GetRoomOverlappingAsync(
+        Guid roomId,
+        DateTimeOffset fromUtc,
+        DateTimeOffset toUtc,
+        CancellationToken cancellationToken = default)
+    {
+        return await _dbContext.Blockouts
+            .AsNoTracking()
+            .Where(x => x.RoomId == roomId
+                && x.IsActive
+                && x.StartAt < toUtc
+                && x.EndAt > fromUtc)
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<PagedResult<Blockout>> GetPagedAsync(
         BlockoutQuery query,
         CancellationToken cancellationToken = default)

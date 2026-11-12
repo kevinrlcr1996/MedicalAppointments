@@ -4,7 +4,8 @@ public sealed record AvailabilityQuery(
     Guid DoctorId,
     Guid ClinicId,
     DateOnly Date,
-    int? SlotDurationMinutes);
+    int? SlotDurationMinutes,
+    Guid? RoomId = null);
 
 public sealed record AvailabilitySlotDto(
     Guid DoctorId,
