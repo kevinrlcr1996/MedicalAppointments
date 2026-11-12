@@ -22,6 +22,14 @@ public interface IUserStore
 
     Task<User?> FindTrackedByIdAsync(Guid userId, CancellationToken cancellationToken = default);
 
+    Task<User?> FindTrackedByIdWithRolesAsync(Guid userId, CancellationToken cancellationToken = default);
+
+    Task<UserAdminPage> GetAdminPageAsync(
+        int page,
+        int pageSize,
+        string? search,
+        CancellationToken cancellationToken = default);
+
     Task<User?> FindTrackedByEmailAsync(string normalizedEmail, CancellationToken cancellationToken = default);
 
     Task<User?> FindTrackedByEmailConfirmationTokenHashAsync(

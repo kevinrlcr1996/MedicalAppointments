@@ -1,14 +1,22 @@
 import { useState } from 'react';
-import { AlertTriangle, History, Pill } from 'lucide-react'; // 8d.3/8d.4: iconos de botón
+import {
+  AlertTriangle,
+  ClipboardList,
+  History,
+  Pill,
+} from 'lucide-react'; // 8d.3/8d.4: iconos de botón; 9.1: ClipboardList para recetas
 import { CrudResourcePage } from '../../features/medical-structure/components/CrudResourcePage';
 import { ClinicalHistoryDialog } from '../patients/ClinicalHistoryDialog';
 import { PatientAllergiesDialog } from '../patients/PatientAllergiesDialog'; // 8d.3
 import { PatientMedicationsDialog } from '../patients/PatientMedicationsDialog'; // 8d.4
+import { PrescriptionsDialog } from '../patients/PrescriptionsDialog'; // 9.1
 import { usePatientAllergiesRealtime } from '../../hooks/usePatientAllergiesRealtime'; // 8d.3
 import { usePatientMedicationsRealtime } from '../../hooks/usePatientMedicationsRealtime'; // 8d.4
+import { usePrescriptionsRealtime } from '../../hooks/usePrescriptionsRealtime'; // 9.1
 import { useAuth } from '../../contexts/AuthContext';
 import { hasPermission, Permissions } from '../../lib/permissions';
 import { Button } from '../../components/ui/Button';
+import type { CrudRow } from '../../features/medical-structure/components/CrudResourcePage';
 
 const genderOptions = [
   { value: 'Unknown', label: 'Unknown' },
@@ -35,12 +43,16 @@ export function PatientsPage() {
   // o subscribirás dos veces e invalidarás de más.
   usePatientAllergiesRealtime();
   usePatientMedicationsRealtime();
+  usePrescriptionsRealtime(); // 9.1
 
   const { user } = useAuth();
   const canReadHistory = hasPermission(user, Permissions.ClinicalRecordsRead);
+  const canReadPrescriptions = hasPermission(user, Permissions.PrescriptionsRead);
+
   const [historyTarget, setHistoryTarget] = useState<{ id: string; label: string } | null>(null);
-  const [allergiesTarget, setAllergiesTarget] = useState<{ id: string; label: string } | null>(null); // 8d.3
-  const [medicationsTarget, setMedicationsTarget] = useState<{ id: string; label: string } | null>(null); // 8d.4
+  const [allergiesTarget, setAllergiesTarget] = useState<{ id: string; label: string } | null>(null);
+  const [medicationsTarget, setMedicationsTarget] = useState<{ id: string; label: string } | null>(null);
+  const [prescriptionsTarget, setPrescriptionsTarget] = useState<{ id: string; label: string } | null>(null);
 
   return (
     <>
@@ -68,7 +80,7 @@ export function PatientsPage() {
               {
                 key: 'history',
                 header: 'Historial',
-                render: (row: any) => (
+                render: (row: CrudRow) => (
                   <Button
                     variant="secondary"
                     size="sm"
@@ -90,7 +102,7 @@ export function PatientsPage() {
               {
                 key: 'allergies', // 8d.3
                 header: 'Alergias',
-                render: (row: any) => (
+                render: (row: CrudRow) => (
                   <Button
                     variant="secondary"
                     size="sm"
@@ -112,7 +124,7 @@ export function PatientsPage() {
               {
                 key: 'medications', // 8d.4
                 header: 'Medicación',
-                render: (row: any) => (
+                render: (row: CrudRow) => (
                   <Button
                     variant="secondary"
                     size="sm"
@@ -128,6 +140,36 @@ export function PatientsPage() {
                     leftIcon={<Pill className="h-4 w-4" />}
                   >
                     Medicación
+                  </Button>
+                ),
+              },
+            ]
+            : []),
+
+          // 9.1: recetas entran en un spread condicional SEPARADO, bajo prescriptions.read.
+          // No se mezcla con canReadHistory porque prescripciones tiene matriz propia.
+          // El label se calcula inline otra vez: no refactorizo el bloque verificado de 8b/8d.
+          ...(canReadPrescriptions
+            ? [
+              {
+                key: 'prescriptions',
+                header: 'Recetas',
+                render: (row: CrudRow) => (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() =>
+                      setPrescriptionsTarget({
+                        id: row.id,
+                        label:
+                          [String(row.firstName ?? ''), String(row.lastName ?? '')]
+                            .filter(Boolean)
+                            .join(' ') || 'Paciente',
+                      })
+                    }
+                    leftIcon={<ClipboardList className="h-4 w-4" />}
+                  >
+                    Recetas
                   </Button>
                 ),
               },
@@ -175,6 +217,15 @@ export function PatientsPage() {
             onClose={() => setMedicationsTarget(null)}
           />
         </>
+      ) : null}
+
+      {canReadPrescriptions ? (
+        <PrescriptionsDialog
+          open={Boolean(prescriptionsTarget)}
+          patientId={prescriptionsTarget?.id ?? null}
+          patientLabel={prescriptionsTarget?.label ?? ''}
+          onClose={() => setPrescriptionsTarget(null)}
+        />
       ) : null}
     </>
   );

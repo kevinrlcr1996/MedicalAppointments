@@ -76,6 +76,18 @@ export const Permissions = {
   ClinicalRecordsFinalize: 'clinical_records.finalize',
   ClinicalRecordsCorrect: 'clinical_records.correct',
   ClinicalRecordsManageAll: 'clinical_records.manage_all',
+
+  PrescriptionsRead: 'prescriptions.read',
+  PrescriptionsCreate: 'prescriptions.create',
+  PrescriptionsIssue: 'prescriptions.issue',
+  PrescriptionsCorrect: 'prescriptions.correct',
+  PrescriptionsRenew: 'prescriptions.renew',
+  PrescriptionsCancel: 'prescriptions.cancel',
+  PrescriptionsManageAll: 'prescriptions.manage_all',
+  PrescriptionsDispense: 'prescriptions.dispense',
+  PrescriptionsExpire: 'prescriptions.expire',
+  DocumentsRead: 'documents.read',
+  DocumentsManage: 'documents.manage',
 } as const;
 
 export type Permission = (typeof Permissions)[keyof typeof Permissions];

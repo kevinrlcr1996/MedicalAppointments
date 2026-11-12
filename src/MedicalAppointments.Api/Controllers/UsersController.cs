@@ -11,7 +11,7 @@ namespace MedicalAppointments.Api.Controllers;
 [ApiController]
 [Route("api/v{version:apiVersion}/users")]
 [ApiVersion("1.0")]
-[Authorize(Policy = Permissions.UsersManage)]
+[Authorize]
 public sealed class UsersController : ControllerBase
 {
     private readonly IUserAdminService _service;
@@ -46,6 +46,7 @@ public sealed class UsersController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Policy = Permissions.UsersManage)]
     [ProducesResponseType(typeof(UserResponse), StatusCodes.Status201Created)]
     public async Task<ActionResult<UserResponse>> Create(
         [FromBody] CreateUserRequest request,
@@ -64,6 +65,7 @@ public sealed class UsersController : ControllerBase
     }
 
     [HttpPut("{id:guid}/roles")]
+    [Authorize(Policy = Permissions.UsersManage)]
     [ProducesResponseType(typeof(UserResponse), StatusCodes.Status200OK)]
     public async Task<ActionResult<UserResponse>> AssignRoles(
         Guid id,
@@ -76,6 +78,7 @@ public sealed class UsersController : ControllerBase
     }
 
     [HttpPost("{id:guid}/unlock")]
+    [Authorize(Policy = Permissions.UsersManage)]
     [ProducesResponseType(typeof(UserResponse), StatusCodes.Status200OK)]
     public async Task<ActionResult<UserResponse>> Unlock(
         Guid id,

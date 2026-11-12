@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -164,15 +164,14 @@ export function DoctorsPage() {
     },
   });
 
-  useEffect(() => {
-    if (!modalOpen) {
-      setSelectedSpecialtyIds([]);
-      setSelectedClinicIds([]);
-      setPrimaryClinicId('');
-      setLanguages([]);
-      form.reset();
-    }
-  }, [modalOpen, form]);
+  const closeModal = () => {
+    setModalOpen(false);
+    setSelectedSpecialtyIds([]);
+    setSelectedClinicIds([]);
+    setPrimaryClinicId('');
+    setLanguages([]);
+    form.reset();
+  };
 
   const openCreate = () => {
     setEditingDoctor(null);
@@ -440,7 +439,7 @@ export function DoctorsPage() {
       <Modal
         open={modalOpen}
         title={editingDoctor ? 'Editar médico' : 'Nuevo médico'}
-        onClose={() => setModalOpen(false)}
+        onClose={closeModal}
         size="xl"
         footer={
           <div className="space-y-3">
@@ -450,7 +449,7 @@ export function DoctorsPage() {
               </Alert>
             ) : null}
             <div className="flex justify-end gap-3">
-              <Button type="button" variant="secondary" onClick={() => setModalOpen(false)}>
+              <Button type="button" variant="secondary" onClick={closeModal}>
                 Cancelar
               </Button>
               <Button type="submit" form="doctor-form" loading={saveMutation.isPending} leftIcon={<Save className="h-4 w-4" />}>

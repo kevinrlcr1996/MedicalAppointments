@@ -23,6 +23,17 @@ public sealed class EfPatientAllergyStore : IPatientAllergyStore
             .OrderBy(x => x.CreatedAt)
             .ToListAsync(cancellationToken);
 
+    public Task<bool> HasAppointmentWithDoctorAsync(Guid patientId, Guid doctorId, CancellationToken cancellationToken = default)
+        => _dbContext.Appointments.AnyAsync(x =>
+            x.PatientId == patientId &&
+            x.DoctorId == doctorId &&
+            (x.Status == Domain.Appointments.AppointmentStatus.Confirmed ||
+             x.Status == Domain.Appointments.AppointmentStatus.CheckedIn ||
+             x.Status == Domain.Appointments.AppointmentStatus.InProgress ||
+             x.Status == Domain.Appointments.AppointmentStatus.Completed ||
+             x.Status == Domain.Appointments.AppointmentStatus.Rescheduled),
+            cancellationToken);
+
     // Asunción flaggeada: DbSet Patients (naming uniforme del codebase). Confirmar si diverge.
     public Task<bool> PatientExistsAsync(Guid patientId, CancellationToken cancellationToken = default)
         => _dbContext.Patients.AnyAsync(p => p.Id == patientId, cancellationToken);

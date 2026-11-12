@@ -81,6 +81,7 @@ public sealed class IdentitySeeder
             (Name: Roles.SuperAdmin, Description: "Full system access", IsSystem: true),
             (Name: Roles.Admin, Description: "Administrative access", IsSystem: true),
             (Name: Roles.Doctor, Description: "Doctor access", IsSystem: true),
+            (Name: Roles.Pharmacist, Description: "Prescription dispensing access", IsSystem: true),
             (Name: Roles.Receptionist, Description: "Reception access", IsSystem: true),
             (Name: Roles.Patient, Description: "Patient access", IsSystem: true)
         };
@@ -165,6 +166,13 @@ public sealed class IdentitySeeder
             Permissions.WaitingListManageAll,
             Permissions.ClinicalRecordsRead,
             Permissions.ClinicalRecordsManageAll,
+            Permissions.PrescriptionsRead,
+            Permissions.PrescriptionsCreate,
+            Permissions.PrescriptionsIssue,
+            Permissions.PrescriptionsCorrect,
+            Permissions.PrescriptionsRenew,
+            Permissions.PrescriptionsCancel,
+            Permissions.PrescriptionsManageAll,
         }, now, cancellationToken);
 
         await GrantAsync(Roles.Doctor, new[]
@@ -183,7 +191,12 @@ public sealed class IdentitySeeder
             Permissions.MedicalRecordsUpdate,
             Permissions.PrescriptionsRead,
             Permissions.PrescriptionsCreate,
+            Permissions.PrescriptionsIssue,
+            Permissions.PrescriptionsCorrect,
+            Permissions.PrescriptionsRenew,
+            Permissions.PrescriptionsCancel,
             Permissions.DocumentsRead,
+            Permissions.DocumentsManage,
             Permissions.NotificationsRead,
             Permissions.RealtimeTest,
             Permissions.WaitingListReadAssigned,
@@ -193,6 +206,14 @@ public sealed class IdentitySeeder
             Permissions.ClinicalRecordsFinalize,
             Permissions.ClinicalRecordsCorrect,
             Permissions.DoctorsRead,
+        }, now, cancellationToken);
+
+        await GrantAsync(Roles.Pharmacist, new[]
+        {
+            Permissions.PatientsRead,
+            Permissions.PrescriptionsRead,
+            Permissions.PrescriptionsDispense,
+            Permissions.PrescriptionsExpire,
         }, now, cancellationToken);
 
         await GrantAsync(Roles.Receptionist, new[]

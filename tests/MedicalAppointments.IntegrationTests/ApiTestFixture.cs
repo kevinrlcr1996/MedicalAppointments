@@ -1,8 +1,10 @@
-﻿using MedicalAppointments.Infrastructure.Persistence;
+using MedicalAppointments.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using System.Text;
 using Testcontainers.MsSql;
@@ -48,6 +50,19 @@ public sealed class ApiTestFixture : IAsyncLifetime
                 builder.UseSetting("Seed:SuperAdminEmail", SuperAdminEmail);
                 builder.UseSetting("Seed:SuperAdminPassword", SuperAdminPassword);
                 builder.UseSetting("Cors:AllowedOrigins:0", "http://localhost:5173");
+                var clamAvEnabled = string.Equals(Environment.GetEnvironmentVariable("MA_TEST_CLAMAV_ENABLED"), "true", StringComparison.OrdinalIgnoreCase);
+                builder.UseSetting("Attachments:Scanner:Enabled", clamAvEnabled.ToString());
+                builder.UseSetting("Attachments:Scanner:ClamAvHost", Environment.GetEnvironmentVariable("MA_TEST_CLAMAV_HOST" ) ?? "127.0.0.1" );
+                builder.UseSetting("Attachments:Scanner:ClamAvPort", Environment.GetEnvironmentVariable("MA_TEST_CLAMAV_PORT" ) ?? "3310" );
+                if (clamAvEnabled)
+                {
+                    builder.ConfigureTestServices(services =>
+                    {
+                        services.RemoveAll<MedicalAppointments.Application.ClinicalRecords.Storage.IFileStorage>();
+                        services.AddSingleton<InMemoryTestFileStorage>();
+                        services.AddSingleton<MedicalAppointments.Application.ClinicalRecords.Storage.IFileStorage>(provider => provider.GetRequiredService<InMemoryTestFileStorage>());
+                    });
+                }
             });
 
         using var scope = Factory.Services.CreateScope();

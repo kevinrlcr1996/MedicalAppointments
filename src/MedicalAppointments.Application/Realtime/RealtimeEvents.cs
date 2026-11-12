@@ -28,4 +28,6 @@ public static class RealtimeEvents
     public const string PatientAllergyUpdated = "PatientAllergyUpdated";
 
     public const string PatientMedicationUpdated = "PatientMedicationUpdated";
+
+    public const string PrescriptionUpdated = "PrescriptionUpdated";
 }

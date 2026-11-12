@@ -1,6 +1,7 @@
 ﻿using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using MedicalAppointments.Application.Common.Exceptions;
 using MedicalAppointments.Application.ClinicalRecords.Storage;
 using MedicalAppointments.Domain.ClinicalRecords;
 using Microsoft.Extensions.Logging;
@@ -65,25 +66,34 @@ public sealed class ClamAvFileScanner : IFileScanner
                 return new ScanResult(ClinicalAttachmentScanStatus.Clean, response.Trim());
             }
 
-            // Respuesta inesperada: no bloqueamos (decisión de config), marcamos Skipped + log.
-            _logger.LogWarning("ClamAV returned unexpected response for {File}: {Response}", fileName, response);
-            return new ScanResult(ClinicalAttachmentScanStatus.Skipped, "Unexpected scanner response.");
+            _logger.LogWarning("ClamAV returned an unexpected response. The attachment will not be accepted.");
+            throw new AttachmentScannerUnavailableException("The attachment scanner returned an unexpected response.");
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
         }
         catch (Exception ex)
         {
-            // AV indisponible: NO bloqueamos el upload (config explícita), Skipped + log.
-            _logger.LogWarning(ex, "ClamAV scan unavailable for {File}; accepted as unscanned.", fileName);
-            return new ScanResult(ClinicalAttachmentScanStatus.Skipped, "Scanner unavailable.");
+            _logger.LogWarning(ex, "ClamAV scan unavailable. The attachment will not be accepted.");
+            throw new AttachmentScannerUnavailableException("The attachment could not be verified by the configured scanner.", ex);
         }
     }
 
     private static async Task<string> ReadLineAsync(NetworkStream stream, CancellationToken cancellationToken)
     {
         var sb = new StringBuilder();
-        int b;
-        while ((b = stream.ReadByte()) is not (-1) and not 0)
+        var buffer = new byte[1];
+
+        while (sb.Length < 4096)
         {
-            sb.Append((char)b);
+            var read = await stream.ReadAsync(buffer.AsMemory(0, 1), cancellationToken);
+            if (read == 0 || buffer[0] == 0)
+            {
+                break;
+            }
+
+            sb.Append((char)buffer[0]);
         }
 
         return sb.ToString();

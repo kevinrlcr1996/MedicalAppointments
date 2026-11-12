@@ -38,30 +38,20 @@ export function WaitingRoomDisplayPage() {
         enabled: canView,
     });
 
+    const effectiveDoctorId = doctorId || doctorsQuery.data?.items?.[0]?.id || '';
+
     const selectedDoctorQuery = useQuery({
-        queryKey: ['doctor-detail', doctorId],
-        queryFn: () => apiClient.get<DoctorOption>(`/api/v1/doctors/${doctorId}`),
-        enabled: canView && Boolean(doctorId),
+        queryKey: ['doctor-detail', effectiveDoctorId],
+        queryFn: () => apiClient.get<DoctorOption>(`/api/v1/doctors/${effectiveDoctorId}`),
+        enabled: canView && Boolean(effectiveDoctorId),
     });
 
-    useEffect(() => {
-        const first = doctorsQuery.data?.items?.[0];
-        if (first && !doctorId) {
-            setDoctorId(first.id);
-        }
-    }, [doctorsQuery.data, doctorId]);
-
-    useEffect(() => {
-        const firstClinic = selectedDoctorQuery.data?.clinics?.[0];
-        if (firstClinic && !clinicId) {
-            setClinicId(firstClinic.clinicId);
-        }
-    }, [selectedDoctorQuery.data, clinicId]);
+    const effectiveClinicId = clinicId || selectedDoctorQuery.data?.clinics?.[0]?.clinicId || '';
 
     const boardQuery = useQuery({
-        queryKey: ['waiting-room', 'board', doctorId, clinicId, localDate],
-        queryFn: () => waitingRoomApi.getBoard(doctorId, clinicId, localDate),
-        enabled: canView && Boolean(doctorId && clinicId && localDate),
+        queryKey: ['waiting-room', 'board', effectiveDoctorId, effectiveClinicId, localDate],
+        queryFn: () => waitingRoomApi.getBoard(effectiveDoctorId, effectiveClinicId, localDate),
+        enabled: canView && Boolean(effectiveDoctorId && effectiveClinicId && localDate),
         refetchInterval: 15000,
     });
 
@@ -71,13 +61,13 @@ export function WaitingRoomDisplayPage() {
         }
         const off = notificationSignalRClient.on(SignalREvents.PatientCalled, (payload: unknown) => {
             const p = payload as PatientCalledPayload;
-            if (p.doctorId === doctorId && p.clinicId === clinicId) {
+            if (p.doctorId === effectiveDoctorId && p.clinicId === effectiveClinicId) {
                 setLastCall(p);
                 playChime();
             }
         });
         return off;
-    }, [canView, doctorId, clinicId]);
+    }, [canView, effectiveDoctorId, effectiveClinicId]);
 
     /*     function openDatePicker() {
             const el = dateInputRef.current;
@@ -114,7 +104,7 @@ export function WaitingRoomDisplayPage() {
         label: c.clinicName,
     }));
 
-    const ready = Boolean(doctorId && clinicId && localDate);
+    const ready = Boolean(effectiveDoctorId && effectiveClinicId && localDate);
 
     return (
         <div className="min-h-screen bg-slate-950 p-6 text-white">
@@ -130,7 +120,7 @@ export function WaitingRoomDisplayPage() {
                     <label className="flex flex-col gap-1 text-xs text-slate-400">
                         Médico
                         <select
-                            value={doctorId}
+                            value={effectiveDoctorId}
                             onChange={(e) => {
                                 setDoctorId(e.target.value);
                                 setClinicId('');
@@ -149,9 +139,9 @@ export function WaitingRoomDisplayPage() {
                     <label className="flex flex-col gap-1 text-xs text-slate-400">
                         Clínica
                         <select
-                            value={clinicId}
+                            value={effectiveClinicId}
                             onChange={(e) => setClinicId(e.target.value)}
-                            disabled={!doctorId}
+                            disabled={!effectiveDoctorId}
                             className="h-9 rounded-lg border border-slate-700 bg-slate-950 px-2 text-sm text-white disabled:opacity-50"
                         >
                             <option value="">Seleccionar...</option>

@@ -27,6 +27,8 @@ import { BookAppointmentPage } from './pages/appointments/BookAppointmentPage';
 import { WaitingListPage } from './pages/waiting-list/WaitingListPage';
 import { WaitingRoomDisplayPage } from './pages/waiting-room/WaitingRoomDisplayPage';
 import { WaitingRoomBoardPage } from './pages/waiting-room/WaitingRoomBoardPage';
+import { UsersPage } from './pages/UsersPage';
+import { ReportsPage } from './pages/reports/ReportsPage';
 
 export default function App() {
   return (
@@ -42,6 +44,9 @@ export default function App() {
       <Route element={<ProtectedRoute />}>
         <Route element={<AppLayout />}>
           <Route path="/dashboard" element={<DashboardPage />} />
+          <Route element={<RequirePermission permission={Permissions.ReportsRead} />}>
+            <Route path="/reports" element={<ReportsPage />} />
+          </Route>
           <Route path="/realtime" element={<FoundationRealtimePage />} />
 
           <Route element={<RequirePermission permission={Permissions.SpecialtiesRead} />}>
@@ -70,6 +75,10 @@ export default function App() {
 
           <Route element={<RequirePermission permission={Permissions.PatientsRead} />}>
             <Route path="/admin/patients" element={<PatientsPage />} />
+          </Route>
+
+          <Route element={<RequirePermission permission={Permissions.UsersRead} />}>
+            <Route path="/admin/users" element={<UsersPage />} />
           </Route>
 
           <Route element={<RequirePermission permission={Permissions.SchedulesRead} />}>

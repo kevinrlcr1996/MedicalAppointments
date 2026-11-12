@@ -20,6 +20,8 @@ TestResults/
 *.trx
 coverage*.json
 coverage*.xml
+backups/
+**/uploads/
 
 # OS
 .DS_Store

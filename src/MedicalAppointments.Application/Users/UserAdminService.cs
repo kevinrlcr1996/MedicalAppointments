@@ -41,14 +41,23 @@ public sealed class UserAdminService : IUserAdminService
         var page = Math.Max(1, query.Page);
         var pageSize = Math.Clamp(query.PageSize, 1, 100);
 
-        // NOTA: para Fase 2 mantenemos la proyección simple.
-        // En fases futuras se movería a una store específica con query eficiente.
-        throw new NotImplementedException("User listing will be completed with EF projection in the next refinement.");
+        var result = await _userStore.GetAdminPageAsync(page, pageSize, query.Search, cancellationToken);
+        var items = result.Items.Select(ToResponse).ToArray();
+
+        return new PaginatedResponse<UserResponse>(
+            items,
+            page,
+            pageSize,
+            result.TotalCount,
+            (int)Math.Ceiling(result.TotalCount / (double)pageSize));
     }
 
-    public Task<UserResponse> GetByIdAsync(Guid userId, CancellationToken cancellationToken = default)
+    public async Task<UserResponse> GetByIdAsync(Guid userId, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        var user = await _userStore.FindTrackedByIdWithRolesAsync(userId, cancellationToken)
+            ?? throw new NotFoundException("User not found.");
+
+        return ToResponse(user);
     }
 
     public async Task<UserResponse> CreateAsync(CreateUserCommand command, CancellationToken cancellationToken = default)
@@ -89,12 +98,19 @@ public sealed class UserAdminService : IUserAdminService
             user.IsEmailConfirmed, user.LockoutEnd, command.Roles);
     }
 
-    public Task<UserResponse> AssignRolesAsync(
+    public async Task<UserResponse> AssignRolesAsync(
         Guid userId,
         IEnumerable<string> roleNames,
         CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        var user = await _userStore.FindTrackedByIdWithRolesAsync(userId, cancellationToken)
+            ?? throw new NotFoundException("User not found.");
+
+        var roleIds = await ResolveRoleIdsAsync(roleNames, cancellationToken);
+        user.ReplaceRoles(roleIds.Values, _timeProvider.GetUtcNow());
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        return ToResponse(user, roleIds.Keys.OrderBy(x => x).ToArray());
     }
 
     private async Task<IReadOnlyDictionary<string, Guid>> ResolveRoleIdsAsync(
@@ -123,8 +139,49 @@ public sealed class UserAdminService : IUserAdminService
         return map;
     }
 
-    public Task<UserResponse> UnlockAsync(Guid userId, CancellationToken cancellationToken = default)
+    public async Task<UserResponse> UnlockAsync(Guid userId, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        var user = await _userStore.FindTrackedByIdWithRolesAsync(userId, cancellationToken)
+            ?? throw new NotFoundException("User not found.");
+
+        user.Unlock(_timeProvider.GetUtcNow());
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        return ToResponse(user);
+    }
+
+    private static UserResponse ToResponse(UserAdminData user)
+    {
+        return new UserResponse(
+            user.Id,
+            user.Email,
+            user.FirstName,
+            user.LastName,
+            user.IsEmailConfirmed,
+            user.LockoutEnd,
+            user.Roles);
+    }
+
+    private static UserResponse ToResponse(User user)
+    {
+        return ToResponse(
+            user,
+            user.Roles
+                .Where(x => x.Role is not null)
+                .OrderBy(x => x.Role.Name)
+                .Select(x => x.Role.Name)
+                .ToArray());
+    }
+
+    private static UserResponse ToResponse(User user, IReadOnlyList<string> roles)
+    {
+        return new UserResponse(
+            user.Id,
+            user.Email,
+            user.FirstName,
+            user.LastName,
+            user.IsEmailConfirmed,
+            user.LockoutEnd,
+            roles);
     }
 }

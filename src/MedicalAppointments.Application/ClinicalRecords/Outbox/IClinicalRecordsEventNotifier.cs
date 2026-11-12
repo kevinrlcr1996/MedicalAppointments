@@ -44,4 +44,16 @@ public interface IClinicalRecordsEventNotifier
         string changeType,
         DateTimeOffset now,
         string? correlationId);
+
+    void EnqueuePrescriptionEvent(
+        Domain.ClinicalRecords.Prescription prescription,
+        string changeType,
+        DateTimeOffset now,
+        string? correlationId);
+
+    void EnqueueClinicalDocumentEvent(
+        Domain.ClinicalRecords.ClinicalDocument document,
+        Guid patientId,
+        DateTimeOffset now,
+        string? correlationId);
 }

@@ -51,10 +51,16 @@ public sealed class PatientAllergyService : IPatientAllergyService
         {
             throw new ForbiddenException("You do not have access to clinical records.");
         }
-        // Sin filtro de scope-paciente (pending decision; ver notas de diseño).
         if (!await _store.PatientExistsAsync(patientId, cancellationToken))
         {
             throw new NotFoundException("Patient not found.");
+        }
+
+        if (!subject.CanManageAll && !subject.CanReadAll &&
+            (!subject.CanReadAssigned || !subject.DoctorId.HasValue ||
+             !await _store.HasAppointmentWithDoctorAsync(patientId, subject.DoctorId.Value, cancellationToken)))
+        {
+            throw new ForbiddenException("You do not have access to this patient's clinical records.");
         }
 
         var items = await _store.GetByPatientAsync(patientId, cancellationToken);

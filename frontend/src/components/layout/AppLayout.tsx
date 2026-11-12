@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import {
   Activity,
+  BarChart3,
   Building2,
   CalendarCheck,
   CalendarClock,
@@ -16,6 +17,7 @@ import {
   PanelLeftOpen,  // FIX-sidebar (flaggeado): idem
   Stethoscope,
   Users,
+  UserCog,
   X,
   type LucideIcon,
 } from 'lucide-react';
@@ -37,6 +39,7 @@ interface NavItem {
 const navItems: NavItem[] = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, permissions: [] },
   { to: '/realtime', label: 'Realtime Test', icon: Activity, permissions: [Permissions.RealtimeTest] },
+  { to: '/reports', label: 'Reportes', icon: BarChart3, permissions: [Permissions.ReportsRead] },
 
   {
     to: '/appointments',
@@ -69,6 +72,7 @@ const navItems: NavItem[] = [
   { to: '/admin/resources', label: 'Recursos', icon: CalendarClock, permissions: [Permissions.ResourcesRead] },
   { to: '/admin/doctors', label: 'Médicos', icon: Users, permissions: [Permissions.DoctorsRead] },
   { to: '/admin/patients', label: 'Pacientes', icon: Users, permissions: [Permissions.PatientsRead] },
+  { to: '/admin/users', label: 'Usuarios', icon: UserCog, permissions: [Permissions.UsersRead] },
   {
     to: '/waiting-list',
     label: 'Lista de espera',

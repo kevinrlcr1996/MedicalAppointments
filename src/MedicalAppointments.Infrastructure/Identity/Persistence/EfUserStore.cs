@@ -67,15 +67,63 @@ public sealed class EfUserStore : IUserStore
         var rows = await _dbContext.Roles
             .AsNoTracking()
             .Where(r => normalized.Contains(r.NormalizedName))
-            .Select(r => new { r.NormalizedName, r.Id })
+            .Select(r => new { r.Name, r.Id })
             .ToListAsync(cancellationToken);
 
-        return rows.ToDictionary(r => r.NormalizedName, r => r.Id, StringComparer.OrdinalIgnoreCase);
+        return rows.ToDictionary(r => r.Name, r => r.Id, StringComparer.OrdinalIgnoreCase);
     }
 
     public Task<User?> FindTrackedByIdAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         return _dbContext.Users.FirstOrDefaultAsync(x => x.Id == userId, cancellationToken);
+    }
+
+    public Task<User?> FindTrackedByIdWithRolesAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        return _dbContext.Users
+            .Include(x => x.Roles)
+            .ThenInclude(x => x.Role)
+            .FirstOrDefaultAsync(x => x.Id == userId, cancellationToken);
+    }
+
+    public async Task<UserAdminPage> GetAdminPageAsync(
+        int page,
+        int pageSize,
+        string? search,
+        CancellationToken cancellationToken = default)
+    {
+        var users = _dbContext.Users.AsNoTracking();
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var term = search.Trim();
+            users = users.Where(x =>
+                x.Email.Contains(term) ||
+                (x.FirstName != null && x.FirstName.Contains(term)) ||
+                (x.LastName != null && x.LastName.Contains(term)));
+        }
+
+        var totalCount = await users.CountAsync(cancellationToken);
+        var rows = await users
+            .Include(x => x.Roles)
+            .ThenInclude(x => x.Role)
+            .OrderBy(x => x.Email)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(cancellationToken);
+
+        var items = rows
+            .Select(x => new UserAdminData(
+                x.Id,
+                x.Email,
+                x.FirstName,
+                x.LastName,
+                x.IsEmailConfirmed,
+                x.LockoutEnd,
+                x.Roles.OrderBy(r => r.Role.Name).Select(r => r.Role.Name).ToArray()))
+            .ToArray();
+
+        return new UserAdminPage(items, totalCount);
     }
 
     public Task<User?> FindTrackedByEmailAsync(string normalizedEmail, CancellationToken cancellationToken = default)

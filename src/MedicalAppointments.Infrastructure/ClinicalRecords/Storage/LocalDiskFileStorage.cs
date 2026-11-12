@@ -18,12 +18,24 @@ public sealed class LocalDiskFileStorage : IFileStorage
         var fullPath = ResolveSafe(storageKey);
         Directory.CreateDirectory(Path.GetDirectoryName(fullPath)!);
 
-        await using var fs = new FileStream(fullPath, FileMode.CreateNew, FileAccess.Write, FileShare.None);
-        content.Position = 0;
-        await content.CopyToAsync(fs, cancellationToken);
+        long actualSize;
+        await using (var fs = new FileStream(fullPath, FileMode.CreateNew, FileAccess.Write, FileShare.None))
+        {
+            content.Position = 0;
+            await content.CopyToAsync(fs, cancellationToken);
+            await fs.FlushAsync(cancellationToken);
+            actualSize = fs.Length;
+        }
+
         content.Position = 0;
 
-        return new StoredFile(storageKey, new FileInfo(fullPath).Length);
+        if (actualSize != expectedSize)
+        {
+            File.Delete(fullPath);
+            throw new IOException($"Stored file size mismatch. Expected {expectedSize} bytes, wrote {actualSize} bytes.");
+        }
+
+        return new StoredFile(storageKey, actualSize);
     }
 
     public Task<Stream> OpenReadAsync(string storageKey, CancellationToken cancellationToken = default)

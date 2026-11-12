@@ -182,4 +182,63 @@ public sealed class ClinicalRecordsEventNotifier : IClinicalRecordsEventNotifier
         var message = OutboxMessage.Create(type, JsonSerializer.Serialize(payload, _jsonOptions), now, now);
         _outboxWriter.Enqueue(message);
     }
+
+    public void EnqueuePrescriptionEvent(
+        Prescription prescription,
+        string changeType,
+        DateTimeOffset now,
+        string? correlationId)
+    {
+        var payload = new PrescriptionEventPayload(
+            prescription.Id,
+            prescription.PatientId,
+            prescription.AuthorUserId,
+            prescription.IsFinal,
+            prescription.Status,
+            prescription.CorrectsPrescriptionId,
+            prescription.RenewedFromPrescriptionId,
+            changeType,
+            prescription.RecordedAtUtc,
+            now,
+            correlationId);
+
+        var type = changeType switch
+        {
+            "Created" => OutboxTypes.PrescriptionCreated,
+            "Updated" => OutboxTypes.PrescriptionUpdated,
+            "Issued" => OutboxTypes.PrescriptionIssued,
+            "Corrected" => OutboxTypes.PrescriptionCorrected,
+            "Renewed" => OutboxTypes.PrescriptionRenewed,
+            "Cancelled" => OutboxTypes.PrescriptionCancelled,
+            "Dispensed" => OutboxTypes.PrescriptionDispensed,
+            "Expired" => OutboxTypes.PrescriptionExpired,
+            _ => OutboxTypes.PrescriptionUpdated
+        };
+
+        var message = OutboxMessage.Create(
+            type: type,
+            payload: JsonSerializer.Serialize(payload, _jsonOptions),
+            occurredAt: now,
+            createdAt: now);
+
+        _outboxWriter.Enqueue(message);
+    }
+
+    public void EnqueueClinicalDocumentEvent(
+        ClinicalDocument document,
+        Guid patientId,
+        DateTimeOffset now,
+        string? correlationId)
+    {
+        var payload = new ClinicalDocumentEventPayload(
+            document.Id.ToString(), document.PrescriptionId.ToString(), patientId.ToString(),
+            document.GeneratedByUserId.ToString(), document.SizeBytes, document.ContentType,
+            "Generated", document.GeneratedAt.ToString("O"), now.ToString("O"), correlationId ?? string.Empty);
+        var message = OutboxMessage.Create(
+            OutboxTypes.DocumentGenerated,
+            JsonSerializer.Serialize(payload, _jsonOptions),
+            now,
+            now);
+        _outboxWriter.Enqueue(message);
+    }
 }

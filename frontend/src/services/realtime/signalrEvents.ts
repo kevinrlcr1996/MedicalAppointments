@@ -17,6 +17,8 @@ export const SignalREvents = {
   DiagnosisUpdated: 'DiagnosisUpdated',
   PatientAllergyUpdated: 'PatientAllergyUpdated',
   PatientMedicationUpdated: 'PatientMedicationUpdated',
+  PrescriptionUpdated: 'PrescriptionUpdated',
+  ClinicalDocumentUpdated: 'ClinicalDocumentUpdated',
 } as const;
 
 export const SignalRGroups = {

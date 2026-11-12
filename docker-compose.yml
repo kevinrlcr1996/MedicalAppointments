@@ -17,6 +17,16 @@ services:
       - "1025:1025"
       - "8025:8025"
 
+  clamav:
+    image: ${CLAMAV_IMAGE:-clamav/clamav:stable}
+    container_name: medical-clamav
+    restart: unless-stopped
+    # The API uses the private Compose network; this loopback mapping is only for local scanner verification.
+    ports:
+      - "127.0.0.1:13310:3310"
+    volumes:
+      - clamav-data:/var/lib/clamav
+
   api:
     build:
       context: .
@@ -35,11 +45,15 @@ services:
       Smtp__Port: 1025
       Smtp__From: no-reply@medicalappointments.local
       Smtp__UseSsl: false
+      Attachments__Scanner__Enabled: "true"
+      Attachments__Scanner__ClamAvHost: clamav
+      Attachments__Scanner__ClamAvPort: 3310
     ports:
       - "5001:5001"
     depends_on:
       - sql-server
       - mailpit
+      - clamav
 
   frontend:
     image: node:24-alpine
@@ -58,4 +72,5 @@ services:
 
 volumes:
   sql-data:
+  clamav-data:
   frontend-node-modules:

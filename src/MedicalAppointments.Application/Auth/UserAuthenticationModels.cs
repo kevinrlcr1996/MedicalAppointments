@@ -23,3 +23,16 @@ public sealed record UserProfile(
 public sealed record UserAuthenticationData(
     IReadOnlyList<string> Roles,
     IReadOnlyList<string> Permissions);
+
+public sealed record UserAdminData(
+    Guid Id,
+    string Email,
+    string? FirstName,
+    string? LastName,
+    bool IsEmailConfirmed,
+    DateTimeOffset? LockoutEnd,
+    IReadOnlyList<string> Roles);
+
+public sealed record UserAdminPage(
+    IReadOnlyList<UserAdminData> Items,
+    int TotalCount);

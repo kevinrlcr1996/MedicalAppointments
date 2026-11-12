@@ -37,6 +37,10 @@ public sealed class PatientMedicationService : IPatientMedicationService
         var subject = await _access.GetSubjectAsync(cancellationToken);
         if (!subject.CanReadAll && !subject.CanReadAssigned) throw new ForbiddenException("You do not have access to clinical records.");
         if (!await _store.PatientExistsAsync(patientId, cancellationToken)) throw new NotFoundException("Patient not found.");
+        if (!subject.CanManageAll && !subject.CanReadAll &&
+            (!subject.CanReadAssigned || !subject.DoctorId.HasValue ||
+             !await _store.HasAppointmentWithDoctorAsync(patientId, subject.DoctorId.Value, cancellationToken)))
+            throw new ForbiddenException("You do not have access to this patient's clinical records.");
         var items = await _store.GetByPatientAsync(patientId, cancellationToken);
         return items.Select(Map).ToList();
     }

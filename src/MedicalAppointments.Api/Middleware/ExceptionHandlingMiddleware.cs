@@ -149,6 +149,12 @@ public sealed class ExceptionHandlingMiddleware
                 exception.Message,
                 null),
 
+            AttachmentScannerUnavailableException => (
+                StatusCodes.Status503ServiceUnavailable,
+                "Attachment scanner unavailable.",
+                exception.Message,
+                null),
+
             DbUpdateConcurrencyException => (
                 StatusCodes.Status409Conflict,
                 "Concurrency conflict.",

@@ -250,6 +250,63 @@ namespace MedicalAppointments.Infrastructure.Persistence.Migrations
                     b.ToTable("ClinicalAttachments", (string)null);
                 });
 
+            modelBuilder.Entity("MedicalAppointments.Domain.ClinicalRecords.ClinicalDocument", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<DateTimeOffset>("GeneratedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid>("GeneratedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("PrescriptionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsRequired()
+                        .HasColumnType("varbinary(max)");
+
+                    b.Property<string>("Sha256Hex")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<long>("SizeBytes")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("StorageKey")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PrescriptionId");
+
+                    b.HasIndex("Sha256Hex");
+
+                    b.ToTable("ClinicalDocuments", (string)null);
+                });
+
             modelBuilder.Entity("MedicalAppointments.Domain.ClinicalRecords.ClinicalNote", b =>
                 {
                     b.Property<Guid>("Id")
@@ -616,6 +673,134 @@ namespace MedicalAppointments.Infrastructure.Persistence.Migrations
                         .HasDatabaseName("IX_PatientMedications_PatientId_Status");
 
                     b.ToTable("PatientMedications", (string)null);
+                });
+
+            modelBuilder.Entity("MedicalAppointments.Domain.ClinicalRecords.Prescription", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("AuthorDisplayName")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<Guid>("AuthorDoctorId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("AuthorUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset?>("CancelledAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid?>("CancelledByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("CorrectsPrescriptionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int?>("DaysSupply")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset?>("DispensedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid?>("DispensedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("DosageForm")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTimeOffset?>("ExpiredAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Frequency")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Instructions")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<bool>("IsFinal")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTimeOffset?>("IssuedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<Guid?>("IssuedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("MedicationName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<Guid>("PatientId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int?>("Quantity")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset>("RecordedAtUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int?>("RefillsAllowed")
+                        .HasColumnType("int");
+
+                    b.Property<Guid?>("RenewedFromPrescriptionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Route")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("Strength")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AuthorDoctorId")
+                        .HasDatabaseName("IX_Prescriptions_AuthorDoctorId");
+
+                    b.HasIndex("CorrectsPrescriptionId")
+                        .HasDatabaseName("IX_Prescriptions_CorrectsPrescriptionId");
+
+                    b.HasIndex("PatientId")
+                        .HasDatabaseName("IX_Prescriptions_PatientId");
+
+                    b.HasIndex("RenewedFromPrescriptionId")
+                        .HasDatabaseName("IX_Prescriptions_RenewedFromPrescriptionId");
+
+                    b.HasIndex("PatientId", "Status")
+                        .HasDatabaseName("IX_Prescriptions_PatientId_Status");
+
+                    b.ToTable("Prescriptions", (string)null);
                 });
 
             modelBuilder.Entity("MedicalAppointments.Domain.ClinicalRecords.VitalSigns", b =>
@@ -2274,6 +2459,17 @@ namespace MedicalAppointments.Infrastructure.Persistence.Migrations
                     b.Navigation("Note");
                 });
 
+            modelBuilder.Entity("MedicalAppointments.Domain.ClinicalRecords.ClinicalDocument", b =>
+                {
+                    b.HasOne("MedicalAppointments.Domain.ClinicalRecords.Prescription", "Prescription")
+                        .WithMany()
+                        .HasForeignKey("PrescriptionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Prescription");
+                });
+
             modelBuilder.Entity("MedicalAppointments.Domain.ClinicalRecords.ClinicalNote", b =>
                 {
                     b.HasOne("MedicalAppointments.Domain.Appointments.Appointment", "Appointment")
@@ -2376,6 +2572,39 @@ namespace MedicalAppointments.Infrastructure.Persistence.Migrations
                     b.Navigation("CorrectsMedication");
 
                     b.Navigation("Patient");
+                });
+
+            modelBuilder.Entity("MedicalAppointments.Domain.ClinicalRecords.Prescription", b =>
+                {
+                    b.HasOne("MedicalAppointments.Domain.MedicalStructure.Doctor", "AuthorDoctor")
+                        .WithMany()
+                        .HasForeignKey("AuthorDoctorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MedicalAppointments.Domain.ClinicalRecords.Prescription", "CorrectsPrescription")
+                        .WithMany()
+                        .HasForeignKey("CorrectsPrescriptionId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("MedicalAppointments.Domain.MedicalStructure.Patient", "Patient")
+                        .WithMany()
+                        .HasForeignKey("PatientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MedicalAppointments.Domain.ClinicalRecords.Prescription", "RenewedFromPrescription")
+                        .WithMany()
+                        .HasForeignKey("RenewedFromPrescriptionId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("AuthorDoctor");
+
+                    b.Navigation("CorrectsPrescription");
+
+                    b.Navigation("Patient");
+
+                    b.Navigation("RenewedFromPrescription");
                 });
 
             modelBuilder.Entity("MedicalAppointments.Domain.ClinicalRecords.VitalSigns", b =>

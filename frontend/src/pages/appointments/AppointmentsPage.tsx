@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Ban,
   CalendarCheck,
+  CalendarClock,
   CheckCircle2,
   ClipboardList,
   Clock,
@@ -28,6 +29,7 @@ import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { DataTable } from '../../components/ui/DataTable';
+import { Input } from '../../components/ui/Input';
 import { Modal } from '../../components/ui/Modal';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { Pagination } from '../../components/ui/Pagination';
@@ -51,16 +53,28 @@ export function AppointmentsPage() {
   const [status, setStatus] = useState('');
 
   const [cancelTarget, setCancelTarget] = useState<Appointment | null>(null);
+  const [rescheduleTarget, setRescheduleTarget] = useState<Appointment | null>(null);
   const [notesTarget, setNotesTarget] = useState<Appointment | null>(null);
   const [vitalsTarget, setVitalsTarget] = useState<Appointment | null>(null);
   const [diagnosisTarget, setDiagnosisTarget] = useState<Appointment | null>(null); // 8d.2
   const [cancelIdemKey, setCancelIdemKey] = useState('');
   const [cancelReason, setCancelReason] = useState('');
+  const [rescheduleDate, setRescheduleDate] = useState('');
+  const [rescheduleStart, setRescheduleStart] = useState('');
+  const [rescheduleEnd, setRescheduleEnd] = useState('');
+  const [rescheduleReason, setRescheduleReason] = useState('');
+  const [rescheduleIdemKey, setRescheduleIdemKey] = useState('');
 
   const canRead = hasAnyPermission(user, [
     Permissions.AppointmentsReadAll,
     Permissions.AppointmentsReadAssigned,
     Permissions.AppointmentsReadOwn,
+  ]);
+
+  const canReschedule = hasAnyPermission(user, [
+    Permissions.AppointmentsRescheduleAll,
+    Permissions.AppointmentsRescheduleAssigned,
+    Permissions.AppointmentsRescheduleOwn,
   ]);
 
   const canCancel = hasAnyPermission(user, [
@@ -83,6 +97,25 @@ export function AppointmentsPage() {
     retry: false,
   });
 
+  const rescheduleMutation = useMutation({
+    mutationFn: () => appointmentsApi.reschedule(
+      rescheduleTarget!.id,
+      {
+        newLocalDate: rescheduleDate,
+        newStartAtUtc: new Date(`${rescheduleDate}T${rescheduleStart}`).toISOString(),
+        newEndAtUtc: new Date(`${rescheduleDate}T${rescheduleEnd}`).toISOString(),
+        reason: rescheduleReason.trim() || null,
+      },
+      rescheduleIdemKey,
+    ),
+    onSuccess: async () => {
+      setRescheduleTarget(null);
+      setRescheduleReason('');
+      await queryClient.invalidateQueries({ queryKey: ['appointments'] });
+      await queryClient.invalidateQueries({ queryKey: ['waiting-list'] });
+    },
+  });
+
   const needsOnboarding =
     isPatientOnly && patientQuery.isError && (patientQuery.error as ApiError)?.status === 404;
 
@@ -102,6 +135,7 @@ export function AppointmentsPage() {
         case 'no-show': return appointmentsApi.markNoShow(id);
         default: throw new Error('Unknown action');
       }
+
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['appointments'] });
@@ -123,6 +157,21 @@ export function AppointmentsPage() {
     setCancelIdemKey(crypto.randomUUID());
     setCancelReason('');
     cancelMutation.reset();
+  }
+
+  function openReschedule(appointment: Appointment) {
+    const start = new Date(appointment.startAtUtc);
+    const end = new Date(appointment.endAtUtc);
+    const localDate = appointment.localDate || start.toISOString().slice(0, 10);
+    const localTime = (value: Date) => value.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+
+    setRescheduleTarget(appointment);
+    setRescheduleDate(localDate);
+    setRescheduleStart(localTime(start));
+    setRescheduleEnd(localTime(end));
+    setRescheduleReason('');
+    setRescheduleIdemKey(crypto.randomUUID());
+    rescheduleMutation.reset();
   }
 
   if (isPatientOnly && patientQuery.isLoading) {
@@ -184,6 +233,12 @@ export function AppointmentsPage() {
         </Alert>
       ) : null}
 
+      {rescheduleMutation.isError ? (
+        <Alert variant="error" title="Error al reprogramar">
+          {rescheduleMutation.error instanceof ApiError ? rescheduleMutation.error.message : 'Error inesperado.'}
+        </Alert>
+      ) : null}
+
       {actionMutation.isError ? (
         <Alert variant="error" title="Error en la acción">
           {actionMutation.error instanceof ApiError ? actionMutation.error.message : 'Error inesperado.'}
@@ -238,6 +293,12 @@ export function AppointmentsPage() {
                   {canCancel && (row.status === 'Pending' || row.status === 'Confirmed') ? (
                     <Button size="sm" variant="danger" onClick={() => openCancel(row)} leftIcon={<Trash2 className="h-4 w-4" />}>
                       Cancelar
+                    </Button>
+                  ) : null}
+
+                  {canReschedule && (row.status === 'Pending' || row.status === 'Confirmed') ? (
+                    <Button size="sm" variant="secondary" onClick={() => openReschedule(row)} leftIcon={<CalendarClock className="h-4 w-4" />}>
+                      Reprogramar
                     </Button>
                   ) : null}
 
@@ -314,6 +375,51 @@ export function AppointmentsPage() {
               leftIcon={<Ban className="h-4 w-4" />}
             >
               Confirmar cancelación
+            </Button>
+          </div>
+        </div>
+      </Modal>
+      <Modal
+        open={Boolean(rescheduleTarget)}
+        title="Reprogramar cita"
+        onClose={() => setRescheduleTarget(null)}
+      >
+        <div className="space-y-4">
+          {rescheduleTarget ? (
+            <p className="text-sm text-slate-600 dark:text-slate-400">
+              {rescheduleTarget.patientFullName} · {rescheduleTarget.doctorFullName}
+            </p>
+          ) : null}
+
+          <div className="grid gap-4 sm:grid-cols-3">
+            <label className="text-sm font-medium text-slate-800 dark:text-slate-200">
+              Fecha
+              <Input type="date" value={rescheduleDate} onChange={(event) => setRescheduleDate(event.target.value)} />
+            </label>
+            <label className="text-sm font-medium text-slate-800 dark:text-slate-200">
+              Inicio
+              <Input type="time" value={rescheduleStart} onChange={(event) => setRescheduleStart(event.target.value)} />
+            </label>
+            <label className="text-sm font-medium text-slate-800 dark:text-slate-200">
+              Fin
+              <Input type="time" value={rescheduleEnd} onChange={(event) => setRescheduleEnd(event.target.value)} />
+            </label>
+          </div>
+
+          <label className="block text-sm font-medium text-slate-800 dark:text-slate-200">
+            Motivo
+            <Textarea value={rescheduleReason} onChange={(event) => setRescheduleReason(event.target.value)} maxLength={500} placeholder="Motivo de la reprogramación (opcional)" />
+          </label>
+
+          <div className="flex justify-end gap-3">
+            <Button variant="secondary" onClick={() => setRescheduleTarget(null)}>Cerrar</Button>
+            <Button
+              loading={rescheduleMutation.isPending}
+              disabled={!rescheduleDate || !rescheduleStart || !rescheduleEnd || rescheduleStart >= rescheduleEnd}
+              onClick={() => rescheduleMutation.mutate()}
+              leftIcon={<CalendarClock className="h-4 w-4" />}
+            >
+              Confirmar reprogramación
             </Button>
           </div>
         </div>

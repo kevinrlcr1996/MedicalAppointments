@@ -20,3 +20,11 @@ public class ConflictException : Exception
     {
     }
 }
+
+public sealed class AttachmentScannerUnavailableException : Exception
+{
+    public AttachmentScannerUnavailableException(string message, Exception? innerException = null)
+        : base(message, innerException)
+    {
+    }
+}

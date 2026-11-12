@@ -6,6 +6,7 @@ using MedicalAppointments.Application.Auth;
 using MedicalAppointments.Application.ClinicalRecords;
 using MedicalAppointments.Application.ClinicalRecords.Auth;
 using MedicalAppointments.Application.ClinicalRecords.Outbox;
+using MedicalAppointments.Application.ClinicalRecords.Stores;
 using MedicalAppointments.Application.Common;
 using MedicalAppointments.Application.Foundation;
 using MedicalAppointments.Application.MedicalStructure.Clinics;
@@ -17,6 +18,7 @@ using MedicalAppointments.Application.MedicalStructure.Rooms;
 using MedicalAppointments.Application.MedicalStructure.Specialties;
 using MedicalAppointments.Application.Outbox;
 using MedicalAppointments.Application.Realtime;
+using MedicalAppointments.Application.Reports;
 using MedicalAppointments.Application.Scheduling.Availability;
 using MedicalAppointments.Application.Scheduling.Blockouts;
 using MedicalAppointments.Application.Scheduling.DoctorSchedules;
@@ -46,6 +48,7 @@ public static class ApplicationDependencyInjection
 
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IUserAdminService, UserAdminService>();
+        services.AddScoped<IAppointmentReportsService, AppointmentReportsService>();
 
         services.AddScoped<IFoundationRealtimeTestService, FoundationRealtimeTestService>();
 
@@ -139,6 +142,20 @@ public static class ApplicationDependencyInjection
         services.AddScoped<IOutboxHandler, MedicationUpdatedOutboxHandler>();
         services.AddScoped<IOutboxHandler, MedicationFinalizedOutboxHandler>();
         services.AddScoped<IOutboxHandler, MedicationStatusChangedOutboxHandler>();
+
+        services.AddScoped<IPrescriptionsAccessService, PrescriptionsAccessService>();
+        services.AddScoped<IPrescriptionService, PrescriptionService>();
+        services.AddScoped<IClinicalDocumentService, ClinicalDocumentService>();
+        services.AddScoped<IOutboxHandler, PrescriptionCreatedOutboxHandler>();
+        services.AddScoped<IOutboxHandler, PrescriptionUpdatedOutboxHandler>();
+        services.AddScoped<IOutboxHandler, PrescriptionIssuedOutboxHandler>();
+        services.AddScoped<IOutboxHandler, PrescriptionCorrectedOutboxHandler>();
+        services.AddScoped<IOutboxHandler, PrescriptionRenewedOutboxHandler>();
+        services.AddScoped<IOutboxHandler, PrescriptionCancelledOutboxHandler>();
+        services.AddScoped<IOutboxHandler, PrescriptionDispensedOutboxHandler>();
+        services.AddScoped<IOutboxHandler, PrescriptionExpiredOutboxHandler>();
+
+        services.AddScoped<IOutboxHandler, ClinicalDocumentGeneratedOutboxHandler>();
 
         return services;
     }

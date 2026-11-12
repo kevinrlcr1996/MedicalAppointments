@@ -20,9 +20,13 @@ public sealed class ClinicalRecordsController : ControllerBase
     private readonly IDiagnosisService _diagnoses;
     private readonly IPatientAllergyService _allergies;
     private readonly IPatientMedicationService _medications;
+    private readonly IPrescriptionService _prescriptions;
+    private readonly IClinicalDocumentService _documents;
 
     public ClinicalRecordsController(IClinicalRecordsService service, IClinicalAttachmentService attachments, 
-        IVitalSignsService vitalSigns, IDiagnosisService diagnoses, IPatientAllergyService allergies, IPatientMedicationService medications)
+        IVitalSignsService vitalSigns, IDiagnosisService diagnoses, IPatientAllergyService allergies,
+        IPatientMedicationService medications, IPrescriptionService prescriptionService,
+        IClinicalDocumentService documentService)
     {
         _service = service;
         _attachments = attachments;
@@ -30,6 +34,8 @@ public sealed class ClinicalRecordsController : ControllerBase
         _diagnoses = diagnoses;
         _allergies = allergies;
         _medications = medications;
+        _prescriptions = prescriptionService;
+        _documents = documentService;
     }
 
     [HttpGet("appointments/{appointmentId:guid}/notes")]
@@ -331,6 +337,94 @@ public sealed class ClinicalRecordsController : ControllerBase
         var command = new CorrectMedicationCommand(id, request.PatientId, request.MedicationName, request.Strength, request.DosageForm, request.Frequency, request.Route, request.StartDate, request.Indication, request.RecordedAtUtc);
         return Ok(ToMedicationResponse(await _medications.CorrectAsync(command, cancellationToken)));
     }
+
+    [HttpGet("patients/{patientId:guid}/prescriptions")]
+    [Authorize(Policy = Policies.PrescriptionsRead)]
+    public async Task<ActionResult<IReadOnlyList<PrescriptionResponse>>> ListPrescriptions(Guid patientId, CancellationToken cancellationToken)
+    => Ok((await _prescriptions.ListByPatientAsync(patientId, cancellationToken)).Select(ToPrescriptionResponse).ToList());
+
+    [HttpPost("patients/{patientId:guid}/prescriptions")]
+    [Authorize(Policy = Policies.PrescriptionsManage)]
+    public async Task<ActionResult<PrescriptionResponse>> CreatePrescription(Guid patientId, [FromBody] CreatePrescriptionRequest request, CancellationToken cancellationToken)
+    {
+        var command = new CreatePrescriptionCommand(patientId, request.MedicationName, request.Strength, request.DosageForm, request.Frequency, request.Route, request.Quantity, request.RefillsAllowed, request.DaysSupply, request.Instructions, request.Note, request.RecordedAtUtc);
+        return Ok(ToPrescriptionResponse(await _prescriptions.CreateAsync(command, cancellationToken)));
+    }
+
+    [HttpPut("prescriptions/{id:guid}")]
+    [Authorize(Policy = Policies.PrescriptionsManage)]
+    public async Task<ActionResult<PrescriptionResponse>> UpdatePrescription(Guid id, [FromBody] UpdatePrescriptionRequest request, CancellationToken cancellationToken)
+    {
+        var command = new UpdatePrescriptionCommand(id, request.MedicationName, request.Strength, request.DosageForm, request.Frequency, request.Route, request.Quantity, request.RefillsAllowed, request.DaysSupply, request.Instructions, request.Note);
+        return Ok(ToPrescriptionResponse(await _prescriptions.UpdateAsync(command, cancellationToken)));
+    }
+
+    [HttpPost("prescriptions/{id:guid}/issue")]
+    [Authorize(Policy = Policies.PrescriptionsManage)]
+    public async Task<ActionResult<PrescriptionResponse>> IssuePrescription(Guid id, CancellationToken cancellationToken)
+        => Ok(ToPrescriptionResponse(await _prescriptions.IssueAsync(id, cancellationToken)));
+
+    [HttpPost("prescriptions/{id:guid}/renew")]
+    [Authorize(Policy = Policies.PrescriptionsManage)]
+    public async Task<ActionResult<PrescriptionResponse>> RenewPrescription(Guid id, CancellationToken cancellationToken)
+        => Ok(ToPrescriptionResponse(await _prescriptions.RenewAsync(id, cancellationToken)));
+
+    [HttpPost("prescriptions/{id:guid}/cancel")]
+    [Authorize(Policy = Policies.PrescriptionsManage)]
+    public async Task<ActionResult<PrescriptionResponse>> CancelPrescription(Guid id, CancellationToken cancellationToken)
+        => Ok(ToPrescriptionResponse(await _prescriptions.CancelAsync(id, cancellationToken)));
+
+    [HttpPost("prescriptions/{id:guid}/dispense")]
+    [Authorize(Policy = Permissions.PrescriptionsDispense)]
+    public async Task<ActionResult<PrescriptionResponse>> DispensePrescription(Guid id, CancellationToken cancellationToken)
+        => Ok(ToPrescriptionResponse(await _prescriptions.DispenseAsync(id, cancellationToken)));
+
+    [HttpPost("prescriptions/{id:guid}/expire")]
+    [Authorize(Policy = Permissions.PrescriptionsExpire)]
+    public async Task<ActionResult<PrescriptionResponse>> ExpirePrescription(Guid id, CancellationToken cancellationToken)
+        => Ok(ToPrescriptionResponse(await _prescriptions.ExpireAsync(id, cancellationToken)));
+
+    [HttpPost("prescriptions/{id:guid}/corrections")]
+    [Authorize(Policy = Policies.PrescriptionsManage)]
+    public async Task<ActionResult<PrescriptionResponse>> CorrectPrescription(Guid id, [FromBody] CorrectPrescriptionRequest request, CancellationToken cancellationToken)
+    {
+        var command = new CorrectPrescriptionCommand(id, request.PatientId, request.MedicationName, request.Strength, request.DosageForm, request.Frequency, request.Route, request.Quantity, request.RefillsAllowed, request.DaysSupply, request.Instructions, request.Note, request.RecordedAtUtc);
+        return Ok(ToPrescriptionResponse(await _prescriptions.CorrectAsync(command, cancellationToken)));
+    }
+
+    private static PrescriptionResponse ToPrescriptionResponse(PrescriptionDto d) => new(
+        d.Id, d.PatientId, d.AuthorUserId, d.AuthorDoctorId, d.AuthorDisplayName,
+        d.MedicationName, d.Strength, d.DosageForm, d.Frequency, d.Route, d.Quantity, d.RefillsAllowed, d.DaysSupply,
+        d.Instructions, d.Note, d.Status, d.IsFinal, d.RecordedAtUtc, d.IssuedAt, d.IssuedByUserId,
+        d.CancelledAt, d.CancelledByUserId, d.CorrectsPrescriptionId, d.CorrectsPrescriptionName, d.RenewedFromPrescriptionId, d.CreatedAt);
+
+    [HttpGet("prescriptions/{id:guid}/documents")]
+    [Authorize(Policy = Policies.DocumentsRead)]
+    public async Task<ActionResult<IReadOnlyList<ClinicalDocumentResponse>>> ListPrescriptionDocuments(Guid id, CancellationToken cancellationToken)
+    {
+        var documents = await _documents.ListByPrescriptionAsync(id, cancellationToken);
+        return Ok(documents.Select(ToClinicalDocumentResponse).ToList());
+    }
+
+    [HttpPost("prescriptions/{id:guid}/documents")]
+    [Authorize(Policy = Policies.DocumentsManage)]
+    public async Task<ActionResult<ClinicalDocumentResponse>> GeneratePrescriptionDocument(Guid id, CancellationToken cancellationToken)
+    {
+        var document = await _documents.GeneratePrescriptionDocumentAsync(id, cancellationToken);
+        return Ok(ToClinicalDocumentResponse(document));
+    }
+
+    [HttpGet("documents/{id:guid}/download")]
+    [Authorize(Policy = Policies.DocumentsRead)]
+    public async Task<IActionResult> DownloadClinicalDocument(Guid id, CancellationToken cancellationToken)
+    {
+        var (content, fileName, contentType) = await _documents.DownloadAsync(id, cancellationToken);
+        return File(content, contentType, fileName);
+    }
+
+    private static ClinicalDocumentResponse ToClinicalDocumentResponse(ClinicalDocumentModel d) => new(
+        d.Id.ToString(), d.PrescriptionId.ToString(), d.FileName, d.ContentType, d.SizeBytes,
+        d.GeneratedByUserId.ToString(), d.GeneratedAt.ToString("O"));
 
     private static ClinicalNoteResponse ToResponse(ClinicalNoteDto dto) => new(
         dto.Id, dto.AppointmentId, dto.AuthorUserId, dto.AuthorDoctorId, dto.AuthorDisplayName,

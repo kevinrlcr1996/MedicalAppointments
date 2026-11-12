@@ -62,6 +62,10 @@ public sealed class AppDbContext : DbContext
 
     public DbSet<PatientMedication> PatientMedications => Set<PatientMedication>();
 
+    public DbSet<Prescription> Prescriptions => Set<Prescription>();
+
+    public DbSet<ClinicalDocument> ClinicalDocuments => Set<ClinicalDocument>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

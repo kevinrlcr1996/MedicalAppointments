@@ -18,6 +18,9 @@ public class ClinicalRecordsLayerTests
     private static readonly Assembly AllergyAppAssembly = typeof(MedicalAppointments.Application.ClinicalRecords.IPatientAllergyService).Assembly;
     private static readonly Assembly MedicationDomainAssembly = typeof(MedicalAppointments.Domain.ClinicalRecords.PatientMedication).Assembly;
     private static readonly Assembly MedicationAppAssembly = typeof(MedicalAppointments.Application.ClinicalRecords.IPatientMedicationService).Assembly;
+    private static readonly Assembly PrescriptionDomainAssembly = typeof(MedicalAppointments.Domain.ClinicalRecords.Prescription).Assembly;
+    private static readonly Assembly PrescriptionAppAssembly = typeof(MedicalAppointments.Application.ClinicalRecords.IPrescriptionService).Assembly;
+    private static readonly Assembly DocumentDomainAssembly = typeof(MedicalAppointments.Domain.ClinicalRecords.ClinicalDocument).Assembly;
 
     // Mismas cadenas prohibidas que los dos [Fact] originales, extraídas a arrays (DRY):
     // el contenido y el orden son idénticos, solo que ahora un solo lugar las mantiene
@@ -94,6 +97,9 @@ public class ClinicalRecordsLayerTests
     [Fact] public void Application_PatientAllergies_Should_Not_Depend_On_Infrastructure_Or_Frameworks() => AssertNoReferences(AllergyAppAssembly, ApplicationForbidden);
     [Fact] public void Domain_PatientMedications_Should_Not_Depend_On_Outer_Layers() => AssertNoReferences(MedicationDomainAssembly, DomainForbidden);
     [Fact] public void Application_PatientMedications_Should_Not_Depend_On_Infrastructure_Or_Frameworks() => AssertNoReferences(MedicationAppAssembly, ApplicationForbidden);
+    [Fact] public void Domain_Prescriptions_Should_Not_Depend_On_Outer_Layers() => AssertNoReferences(PrescriptionDomainAssembly, DomainForbidden);
+    [Fact] public void Application_Prescriptions_Should_Not_Depend_On_Infrastructure_Or_Frameworks() => AssertNoReferences(PrescriptionAppAssembly, ApplicationForbidden);
+    [Fact] public void Domain_ClinicalDocuments_Should_Not_Depend_On_Outer_Layers() => AssertNoReferences(DocumentDomainAssembly, DomainForbidden);
 
     // Reescrito fully-qualified (HashSet/StringComparer con prefijo, foreach en vez de LINQ)
     // para que compile con o sin <ImplicitUsings> y sin warnings CS0105. Semántica idéntica:

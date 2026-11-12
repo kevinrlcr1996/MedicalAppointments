@@ -41,4 +41,14 @@ public static class OutboxTypes
     public const string MedicationUpdated = "ClinicalRecords.MedicationUpdated";
     public const string MedicationFinalized = "ClinicalRecords.MedicationFinalized";
     public const string MedicationStatusChanged = "ClinicalRecords.MedicationStatusChanged";
+
+    public const string PrescriptionCreated = "ClinicalRecords.PrescriptionCreated";
+    public const string PrescriptionUpdated = "ClinicalRecords.PrescriptionUpdated";
+    public const string PrescriptionIssued = "ClinicalRecords.PrescriptionIssued";
+    public const string PrescriptionCorrected = "ClinicalRecords.PrescriptionCorrected";
+    public const string PrescriptionRenewed = "ClinicalRecords.PrescriptionRenewed";
+    public const string PrescriptionCancelled = "ClinicalRecords.PrescriptionCancelled";
+    public const string PrescriptionDispensed = "ClinicalRecords.PrescriptionDispensed";
+    public const string PrescriptionExpired = "ClinicalRecords.PrescriptionExpired";
+    public const string DocumentGenerated = "ClinicalRecords.DocumentGenerated";
 }

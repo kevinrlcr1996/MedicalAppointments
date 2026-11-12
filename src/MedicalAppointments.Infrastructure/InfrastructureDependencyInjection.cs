@@ -16,6 +16,7 @@ using MedicalAppointments.Application.MedicalStructure.Specialties;
 using MedicalAppointments.Application.Notifications;
 using MedicalAppointments.Application.Outbox;
 using MedicalAppointments.Application.Realtime;
+using MedicalAppointments.Application.Reports.Stores;
 using MedicalAppointments.Application.Scheduling.Blockouts;
 using MedicalAppointments.Application.Scheduling.Common;
 using MedicalAppointments.Application.Scheduling.DoctorSchedules;
@@ -39,6 +40,7 @@ using MedicalAppointments.Infrastructure.MedicalStructure.Seeding;
 using MedicalAppointments.Infrastructure.Notifications;
 using MedicalAppointments.Infrastructure.Persistence;
 using MedicalAppointments.Infrastructure.Realtime;
+using MedicalAppointments.Infrastructure.Reports.Persistence;
 using MedicalAppointments.Infrastructure.Scheduling.Occupancy;
 using MedicalAppointments.Infrastructure.Scheduling.Persistence;
 using MedicalAppointments.Infrastructure.Scheduling.Time;
@@ -118,6 +120,7 @@ public static class InfrastructureDependencyInjection
         services.AddScoped<IAppointmentOccupancyProvider, EfAppointmentOccupancyProvider>();
 
         services.AddScoped<IAppointmentStore, EfAppointmentStore>();
+        services.AddScoped<IAppointmentReportsStore, EfAppointmentReportsStore>();
         services.AddScoped<IIdempotencyStore, EfIdempotencyStore>();
         services.AddScoped<IAuditWriter, EfAuditWriter>();
         services.AddScoped<IBookingCoordinator, SqlBookingCoordinator>();
@@ -145,6 +148,9 @@ public static class InfrastructureDependencyInjection
         services.AddScoped<IPatientAllergyStore, EfPatientAllergyStore>();
 
         services.AddScoped<IPatientMedicationStore, EfPatientMedicationStore>();
+
+        services.AddScoped<IPrescriptionStore, EfPrescriptionStore>();
+        services.AddScoped<IClinicalDocumentStore, EfClinicalDocumentStore>();
 
         ConfigureNotifications(services, configuration);
 

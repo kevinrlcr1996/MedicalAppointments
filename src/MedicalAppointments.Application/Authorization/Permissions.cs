@@ -111,6 +111,14 @@ public static class Permissions
     public const string ClinicalRecordsCorrect = "clinical_records.correct";
     public const string ClinicalRecordsManageAll = "clinical_records.manage_all";
 
+    public const string PrescriptionsIssue = "prescriptions.issue";
+    public const string PrescriptionsCorrect = "prescriptions.correct";
+    public const string PrescriptionsRenew = "prescriptions.renew";
+    public const string PrescriptionsCancel = "prescriptions.cancel";
+    public const string PrescriptionsManageAll = "prescriptions.manage_all";
+    public const string PrescriptionsDispense = "prescriptions.dispense";
+    public const string PrescriptionsExpire = "prescriptions.expire";
+
     public static readonly IReadOnlyList<string> All =
     [
         RealtimeTest,
@@ -191,6 +199,13 @@ public static class Permissions
         ClinicalRecordsUpdate,
         ClinicalRecordsFinalize,
         ClinicalRecordsCorrect,
-        ClinicalRecordsManageAll
+        ClinicalRecordsManageAll,
+        PrescriptionsIssue,
+        PrescriptionsCorrect,
+        PrescriptionsRenew,
+        PrescriptionsCancel,
+        PrescriptionsManageAll,
+        PrescriptionsDispense,
+        PrescriptionsExpire
     ];
 }

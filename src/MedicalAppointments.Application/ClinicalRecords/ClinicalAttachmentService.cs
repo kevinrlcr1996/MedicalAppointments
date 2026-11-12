@@ -118,31 +118,47 @@ public sealed class ClinicalAttachmentService : IClinicalAttachmentService
 
         ClinicalAttachmentScanStatus scanStatus;
         DateTimeOffset? scannedAt = null;
-        string? scanMessage = null;
+        var scannerStage = "open";
 
         try
         {
             await using var readStream = await _storage.OpenReadAsync(storageKey, cancellationToken);
+            scannerStage = "scan";
             var scan = await _scanner.ScanAsync(readStream, command.FileName, cancellationToken);
             scanStatus = scan.Status;
-            scanMessage = scan.Message;
             scannedAt = now;
         }
-        catch (Exception)
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
-            // Si el scan en sí falla (no el veredicto), tratamos como Skipped pero auditamos;
-            // NO bloqueamos el upload por indisponibilidad del AV (decisión de config explícita).
-            scanStatus = ClinicalAttachmentScanStatus.Skipped;
-            scanMessage = "Scanner unavailable; file accepted as unscanned.";
-            scannedAt = now;
+            await SafeDeleteAsync(storageKey, CancellationToken.None);
+            throw;
+        }
+        catch (Exception exception)
+        {
+            await SafeDeleteAsync(storageKey, CancellationToken.None);
+            EnqueueAudit(subject.UserId, "ClinicalRecords.AttachmentRejectedUnscanned", note.Id, now,
+                new { extension = Path.GetExtension(command.FileName), sizeBytes = command.SizeBytes, sha256 = sha256Hex, failureStage = scannerStage, failureType = exception.GetType().Name });
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            throw new AttachmentScannerUnavailableException(
+                "The attachment was rejected because the configured scanner could not verify it.", exception);
+        }
+
+        if (_options.Scanner.Enabled && scanStatus == ClinicalAttachmentScanStatus.Skipped)
+        {
+            await SafeDeleteAsync(storageKey, CancellationToken.None);
+            EnqueueAudit(subject.UserId, "ClinicalRecords.AttachmentRejectedUnscanned", note.Id, now,
+                new { extension = Path.GetExtension(command.FileName), sizeBytes = command.SizeBytes, sha256 = sha256Hex });
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            throw new AttachmentScannerUnavailableException(
+                "The attachment was rejected because the configured scanner skipped verification.");
         }
 
         if (scanStatus == ClinicalAttachmentScanStatus.Infected)
         {
             // Infectado: rollback del temp, NO persistimos metadata, 409 + auditoría.
-            await SafeDeleteAsync(storageKey, cancellationToken);
+            await SafeDeleteAsync(storageKey, CancellationToken.None);
             EnqueueAudit(subject.UserId, "ClinicalRecords.AttachmentRejectedInfected", note.Id, now,
-                new { fileName = command.FileName, reason = scanMessage });
+                new { extension = Path.GetExtension(command.FileName), sizeBytes = command.SizeBytes, sha256 = sha256Hex, reason = "MalwareDetected" });
             await _unitOfWork.SaveChangesAsync(cancellationToken);
             throw new ConflictException("The file failed the virus scan and was rejected.");
         }

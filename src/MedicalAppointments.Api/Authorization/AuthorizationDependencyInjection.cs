@@ -95,6 +95,28 @@ public static class AuthorizationDependencyInjection
                     context.User.HasPermission(Permissions.ClinicalRecordsFinalize) ||
                     context.User.HasPermission(Permissions.ClinicalRecordsCorrect) ||
                     context.User.HasPermission(Permissions.ClinicalRecordsManageAll)));
+
+            options.AddPolicy(Policies.PrescriptionsRead, policy =>
+                policy.RequireAssertion(context =>
+                    context.User.HasPermission(Permissions.PrescriptionsRead)));
+
+            options.AddPolicy(Policies.PrescriptionsManage, policy =>
+                policy.RequireAssertion(context =>
+                    context.User.HasPermission(Permissions.PrescriptionsCreate) ||
+                    context.User.HasPermission(Permissions.PrescriptionsIssue) ||
+                    context.User.HasPermission(Permissions.PrescriptionsCorrect) ||
+                    context.User.HasPermission(Permissions.PrescriptionsRenew) ||
+                    context.User.HasPermission(Permissions.PrescriptionsCancel) ||
+                    context.User.HasPermission(Permissions.PrescriptionsManageAll)));
+
+            options.AddPolicy(Policies.DocumentsRead, policy =>
+                policy.RequireAssertion(context =>
+                    context.User.HasPermission(Permissions.DocumentsRead)));
+
+            options.AddPolicy(Policies.DocumentsManage, policy =>
+                policy.RequireAssertion(context =>
+                    context.User.HasPermission(Permissions.DocumentsManage) ||
+                    context.User.HasPermission(Permissions.PrescriptionsManageAll)));
         });
 
         return services;
